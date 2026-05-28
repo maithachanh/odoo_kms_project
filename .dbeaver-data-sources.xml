@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<application-data version="1.0">
+  <data-sources>
+    <data-source id="Odoo19_Local" name="Odoo19_Local" driver-name="PostgreSQL" driver-id="postgresql">
+      <properties>
+        <property name="host" value="localhost"/>
+        <property name="port" value="5432"/>
+        <property name="database" value="odoo_kms"/>
+        <property name="user" value="odoo"/>
+        <property name="password" value="odoo"/>
+        <property name="serverName" value="localhost"/>
+        <!-- Disable SSL (optional) -->
+        <property name="SSL" value="false"/>
+      </properties>
+    </data-source>
+  </data-sources>
+</application-data>
