@@ -1,0 +1,146 @@
+# =========================
+
+# Python
+
+# =========================
+
+**pycache**/
+*.py[cod]
+*$py.class
+
+# Virtual Environment
+
+venv/
+.env/
+.venv/
+
+# Python build
+
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Testing
+
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Mypy / Ruff / Lint
+
+.mypy_cache/
+.ruff_cache/
+
+# =========================
+
+# Odoo
+
+# =========================
+
+# Odoo local runtime data
+
+odoo-data/
+postgres-data/
+
+# Odoo session/temp/cache
+
+*.log
+*.pid
+*.sess
+
+# Odoo filestore
+
+filestore/
+
+# Custom addons cache
+
+addons/*/**pycache**/
+
+# Odoo config secrets
+
+odoo.conf
+
+# Ignore enterprise source if needed
+
+enterprise/
+
+# =========================
+
+# PostgreSQL
+
+# =========================
+
+*.sql
+*.dump
+*.backup
+
+# =========================
+
+# Docker
+
+# =========================
+
+.docker/
+docker-data/
+
+# Docker override files
+
+docker-compose.override.yml
+
+# =========================
+
+# IDE - VSCode
+
+# =========================
+
+.vscode/
+
+# =========================
+
+# IDE - PyCharm
+
+# =========================
+
+.idea/
+
+# =========================
+
+# OS Files
+
+# =========================
+
+.DS_Store
+Thumbs.db
+
+# =========================
+
+# Environment Variables
+
+# =========================
+
+.env
+.env.*
+
+# =========================
+
+# Node (if OWL/frontend later)
+
+# =========================
+
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# =========================
+
+# Temporary files
+
+# =========================
+
+tmp/
+temp/
+*.tmp
+*.bak
+*.swp
