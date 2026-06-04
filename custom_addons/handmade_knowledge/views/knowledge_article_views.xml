@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Tag Views -->
+        <record id="view_handmade_knowledge_tag_tree" model="ir.ui.view">
+            <field name="name">handmade.knowledge.tag.tree</field>
+            <field name="model">handmade.knowledge.tag</field>
+            <field name="arch" type="xml">
+                <list string="Tags" editable="bottom">
+                    <field name="name"/>
+                    <field name="color" widget="color_picker"/>
+                </list>
+            </field>
+        </record>
+
+        <record id="action_handmade_knowledge_tag" model="ir.actions.act_window">
+            <field name="name">Tags</field>
+            <field name="res_model">handmade.knowledge.tag</field>
+            <field name="view_mode">list</field>
+        </record>
+
+        <!-- Article Views -->
+        <record id="view_handmade_knowledge_article_tree" model="ir.ui.view">
+            <field name="name">handmade.knowledge.article.tree</field>
+            <field name="model">handmade.knowledge.article</field>
+            <field name="arch" type="xml">
+                <list string="Articles">
+                    <field name="sequence" widget="handle"/>
+                    <field name="name"/>
+                    <field name="parent_id"/>
+                    <field name="tag_ids" widget="many2many_tags" options="{'color_field': 'color'}"/>
+                    <field name="author_id"/>
+                    <field name="create_date"/>
+                    <field name="is_favorite" widget="boolean_favorite" nolabel="1"/>
+                </list>
+            </field>
+        </record>
+
+        <record id="view_handmade_knowledge_article_form" model="ir.ui.view">
+            <field name="name">handmade.knowledge.article.form</field>
+            <field name="model">handmade.knowledge.article</field>
+            <field name="arch" type="xml">
+                <form string="Article">
+                    <sheet>
+                        <div class="oe_button_box" name="button_box">
+                            <field name="is_favorite" widget="boolean_favorite"/>
+                        </div>
+                        <div class="oe_title">
+                            <label for="name" class="oe_edit_only" string="Article Title"/>
+                            <h1>
+                                <field name="name" placeholder="e.g. Standard Operating Procedure"/>
+                            </h1>
+                        </div>
+                        <group>
+                            <group>
+                                <field name="parent_id" options="{'no_create_edit': True}"/>
+                                <field name="author_id" readonly="1"/>
+                            </group>
+                            <group>
+                                <field name="tag_ids" widget="many2many_tags" options="{'color_field': 'color'}"/>
+                                <field name="sequence"/>
+                            </group>
+                        </group>
+                        <notebook>
+                            <page string="Content" name="content_page">
+                                <field name="content" widget="html" class="oe_sandbox" options="{'style-inline': true}"/>
+                            </page>
+                            <page string="Sub-articles" name="sub_articles_page">
+                                <field name="child_ids" context="{'default_parent_id': id}">
+                                    <list editable="bottom">
+                                        <field name="sequence" widget="handle"/>
+                                        <field name="name"/>
+                                        <field name="tag_ids" widget="many2many_tags" options="{'color_field': 'color'}"/>
+                                        <field name="author_id"/>
+                                    </list>
+                                </field>
+                            </page>
+                        </notebook>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <record id="view_handmade_knowledge_article_kanban" model="ir.ui.view">
+            <field name="name">handmade.knowledge.article.kanban</field>
+            <field name="model">handmade.knowledge.article</field>
+            <field name="arch" type="xml">
+                <kanban class="o_kanban_mobile">
+                    <field name="id"/>
+                    <field name="name"/>
+                    <field name="parent_id"/>
+                    <field name="tag_ids"/>
+                    <field name="is_favorite"/>
+                    <field name="author_id"/>
+                    <templates>
+                        <t t-name="card">
+                            <div class="oe_kanban_global_click">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <strong class="o_kanban_record_title" style="font-size: 1.1em;">
+                                        <field name="name"/>
+                                    </strong>
+                                    <field name="is_favorite" widget="boolean_favorite"/>
+                                </div>
+                                <div class="mb-2">
+                                    <field name="tag_ids" widget="many2many_tags" options="{'color_field': 'color'}"/>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mt-2">
+                                    <div class="text-muted small">
+                                        <t t-if="record.parent_id.raw_value">
+                                            <i class="fa fa-folder-o mr-1" title="Parent Folder"/> <field name="parent_id"/>
+                                        </t>
+                                    </div>
+                                    <field name="author_id" widget="many2one_avatar_user"/>
+                                </div>
+                            </div>
+                        </t>
+                    </templates>
+                </kanban>
+            </field>
+        </record>
+
+        <record id="view_handmade_knowledge_article_search" model="ir.ui.view">
+            <field name="name">handmade.knowledge.article.search</field>
+            <field name="model">handmade.knowledge.article</field>
+            <field name="arch" type="xml">
+                <search string="Search Articles">
+                    <field name="name" string="Title"/>
+                    <field name="content" string="Content"/>
+                    <field name="tag_ids"/>
+                    <filter string="Favorites" name="favorite" domain="[('is_favorite', '=', True)]"/>
+                    <filter string="Root Articles" name="root" domain="[('parent_id', '=', False)]"/>
+                    <separator/>
+                    <filter string="Group by Parent Article" name="group_by_parent" context="{'group_by': 'parent_id'}"/>
+                    <filter string="Group by Author" name="group_by_author" context="{'group_by': 'author_id'}"/>
+                </search>
+            </field>
+        </record>
+
+        <!-- Actions -->
+        <record id="action_handmade_knowledge_article" model="ir.actions.act_window">
+            <field name="name">Articles</field>
+            <field name="res_model">handmade.knowledge.article</field>
+            <field name="view_mode">list,kanban,form</field>
+            <field name="search_view_id" ref="view_handmade_knowledge_article_search"/>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">
+                    Create your first knowledge article!
+                </p>
+                <p>
+                    Organize your team's SOPs, guidelines, and documentation in a structured tree.
+                </p>
+            </field>
+        </record>
+
+        <!-- Menu Structure -->
+        <menuitem id="menu_handmade_knowledge_root"
+                  name="Handmade Knowledge"
+                  sequence="15"/>
+
+        <menuitem id="menu_handmade_knowledge_article"
+                  name="Articles"
+                  parent="menu_handmade_knowledge_root"
+                  action="action_handmade_knowledge_article"
+                  sequence="10"/>
+
+        <menuitem id="menu_handmade_knowledge_configuration"
+                  name="Configuration"
+                  parent="menu_handmade_knowledge_root"
+                  sequence="100"/>
+
+        <menuitem id="menu_handmade_knowledge_tag"
+                  name="Tags"
+                  parent="menu_handmade_knowledge_configuration"
+                  action="action_handmade_knowledge_tag"
+                  sequence="10"/>
+    </data>
+</odoo>

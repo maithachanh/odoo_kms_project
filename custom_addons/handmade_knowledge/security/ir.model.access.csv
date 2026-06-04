@@ -1,0 +1,3 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_handmade_knowledge_tag,handmade.knowledge.tag,model_handmade_knowledge_tag,base.group_user,1,1,1,1
+access_handmade_knowledge_article,handmade.knowledge.article,model_handmade_knowledge_article,base.group_user,1,1,1,1
