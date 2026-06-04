@@ -12,7 +12,7 @@ services:
     volumes:
       - ./postgres-data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "5433:5432"
     restart: always
 
   odoo:
@@ -30,4 +30,5 @@ services:
       - ./odoo-data:/var/lib/odoo
       - ./odoo.conf:/etc/odoo/odoo.conf
       - ./odoo-patches/translate.py:/usr/lib/python3/dist-packages/odoo/tools/translate.py:ro
+      - ./custom_addons:/mnt/extra-addons
     restart: always
