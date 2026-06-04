@@ -39,7 +39,33 @@ class HandmadeKnowledgeArticle(models.Model):
         default=lambda self: self.env.user
     )
     create_date = fields.Datetime(string='Created On', readonly=True)
+    
+    # New metadata fields based on Odoo Knowledge UI properties
+    visibility = fields.Selection([
+        ('workspace', 'Workspace'),
+        ('shared', 'Shared'),
+        ('private', 'Private')
+    ], string='Visibility', default='workspace', required=True)
+
+    source_type = fields.Selection([
+        ('individual', 'Individual'),
+        ('team', 'Team'),
+        ('company', 'Company')
+    ], string='Source', default='individual')
+
+    dimension = fields.Selection([
+        ('methodological', 'Methodological'),
+        ('operational', 'Operational'),
+        ('strategic', 'Strategic')
+    ], string='Dimension', default='methodological')
+
+    functional_topic = fields.Char(string='Functional Topic')
+    property_4 = fields.Char(string='Property 4')
+    active = fields.Boolean(string='Active', default=True)
+    
+    # Compute fields for displaying hierarchy
     display_name = fields.Char(compute='_compute_display_name', recursive=True)
+    breadcrumb_path = fields.Char(compute='_compute_breadcrumb_path', recursive=True)
 
     @api.depends('parent_id', 'parent_id.display_name', 'name')
     def _compute_display_name(self):
@@ -50,3 +76,13 @@ class HandmadeKnowledgeArticle(models.Model):
                 names.append(current.name or '')
                 current = current.parent_id
             record.display_name = " / ".join(reversed(names))
+
+    @api.depends('parent_id', 'parent_id.breadcrumb_path')
+    def _compute_breadcrumb_path(self):
+        for record in self:
+            names = []
+            current = record.parent_id
+            while current:
+                names.append(current.name or '')
+                current = current.parent_id
+            record.breadcrumb_path = " / ".join(reversed(names)) if names else ""
