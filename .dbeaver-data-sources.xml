@@ -4,7 +4,7 @@
     <data-source id="Odoo19_Local" name="Odoo19_Local" driver-name="PostgreSQL" driver-id="postgresql">
       <properties>
         <property name="host" value="localhost"/>
-        <property name="port" value="5432"/>
+        <property name="port" value="5433"/>
         <property name="database" value="odoo_kms"/>
         <property name="user" value="odoo"/>
         <property name="password" value="odoo"/>

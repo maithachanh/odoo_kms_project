@@ -7,7 +7,7 @@ Deploy a **local Odoo 19 Community** environment using Docker, expose the Postgr
 
 ## 📁 Repository Layout (`d:\odoo19-local`)
 ```
-├─ docker-compose.yml          # Docker services (Postgres + Odoo) – port 5432 exposed
+├─ docker-compose.yml          # Docker services (Postgres + Odoo) – port 5433 exposed
 ├─ odoo.conf                  # Odoo configuration (admin password = admin)
 ├─ odoo-data/                 # Persistent Odoo data (mounted in container)
 ├─ postgres-data/             # Persistent PostgreSQL data (mounted in container)
@@ -24,8 +24,8 @@ Deploy a **local Odoo 19 Community** environment using Docker, expose the Postgr
  docker-compose up -d   # pulls postgres:15 and odoo:19.0 images, creates containers
 ```
 - **Odoo container**: `odoo19-web` (exposes port **8069** → http://localhost:8069)
-- **PostgreSQL container**: `odoo19-db` (exposes port **5432** → host can connect directly)
-- The `docker‑compose.yml` already maps `5432:5432` so GUI tools can reach the DB.
+- **PostgreSQL container**: `odoo19-db` (exposes port **5433** on host → host can connect directly)
+- The `docker‑compose.yml` already maps `5433:5432` so GUI tools can reach the DB.
 
 ### Restart / Re‑create a service (e.g., after config change)
 ```bash
@@ -56,7 +56,7 @@ You can connect from any client that supports PostgreSQL (pgAdmin, DBeaver, psql
 | Parameter | Value |
 |---|---|
 | **Host** | `localhost` |
-| **Port** | `5432` |
+| **Port** | `5433` |
 | **Username** | `odoo` |
 | **Password** | `odoo` |
 | **Database** | `odoo_kms` |
