@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="article_it_onboarding" model="kms.knowledge.article">
+        <field name="name">IT Engineer Onboarding Protocol</field>
+        <field name="workspace_dimension">it</field>
+        <field name="body_html" type="html"><![CDATA[<p>This document outlines the onboarding steps for new IT engineers, including access provisioning, environment setup, and security training.</p>]]></field>
+    </record>
+    <record id="article_network_policy" model="kms.knowledge.article">
+        <field name="name">Network Security &amp; System Firewall Policy</field>
+        <field name="workspace_dimension">it</field>
+        <field name="body_html" type="html"><![CDATA[<p>Company-wide firewall rules, port restrictions, and intrusion detection guidelines.</p>]]></field>
+    </record>
+    <record id="article_hardware_agreement" model="kms.knowledge.article">
+        <field name="name">Acceptable Hardware Use Agreement</field>
+        <field name="workspace_dimension">general</field>
+        <field name="body_html" type="html"><![CDATA[<p>Policy describing permissible hardware usage, personal device restrictions, and compliance.</p>]]></field>
+    </record>
+    <record id="article_general_conduct" model="kms.knowledge.article">
+        <field name="name">General Workspace Conduct Guideline</field>
+        <field name="workspace_dimension">general</field>
+        <field name="body_html" type="html"><![CDATA[<p>Guidelines for professional behavior, communication etiquette, and collaboration.</p>]]></field>
+    </record>
+    <record id="article_hr_onboarding" model="kms.knowledge.article">
+        <field name="name">HR Onboarding Protocol</field>
+        <field name="workspace_dimension">hr</field>
+        <field name="body_html" type="html"><![CDATA[<p>Procedures for new employee paperwork, benefits enrollment, and introductory training.</p>]]></field>
+    </record>
+</odoo>
