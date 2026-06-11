@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <!-- Tree view -->
+    <record id="view_kms_knowledge_article_tree" model="ir.ui.view">
+        <field name="name">kms.knowledge.article.tree</field>
+        <field name="model">kms.knowledge.article</field>
+        <field name="arch" type="xml">
+            <tree string="Knowledge Articles">
+                <field name="name"/>
+                <field name="workspace_dimension"/>
+                <field name="tag_ids"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Form view -->
+    <record id="view_kms_knowledge_article_form" model="ir.ui.view">
+        <field name="name">kms.knowledge.article.form</field>
+        <field name="model">kms.knowledge.article</field>
+        <field name="arch" type="xml">
+            <form string="Knowledge Article">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="workspace_dimension"/>
+                        <field name="tag_ids" widget="many2many_tags"/> 
+                    </group>
+                    <group>
+                        <field name="parent_id"/>
+                    </group>
+                    <group>
+                        <field name="body_html" widget="html"/> 
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_kms_knowledge_article" model="ir.actions.act_window">
+        <field name="name">Knowledge Articles</field>
+        <field name="res_model">kms.knowledge.article</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <!-- Menu -->
+    <menuitem id="menu_kms_root" name="KMS" sequence="10"/>
+    <menuitem id="menu_kms_knowledge" name="Knowledge Articles" parent="menu_kms_root" action="action_kms_knowledge_article" sequence="1"/>
+</odoo>

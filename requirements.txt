@@ -1,0 +1,6 @@
+odoo~=19.0
+langchain
+chromadb
+beautifulsoup4
+lxml
+sentence-transformers
