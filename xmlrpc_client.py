@@ -3,8 +3,8 @@
 Odoo 19 XML-RPC Gateway Client
 ===============================
 This standalone script connects to your local Odoo instance via XML-RPC,
-authenticates with the database, and retrieves Knowledge articles along with 
-all metadata (Tags, Dimensions, Visibility, etc.).
+authenticates with the database, and retrieves KMS articles along with 
+all metadata (Tags, Dimensions, etc.) as required by Task 10.2.
 
 Requirements:
 - Odoo running on http://localhost:8069
@@ -23,15 +23,15 @@ DB = 'odoo_kms'
 USER = 'admin'
 PASSWORD = 'admin'
 
-# Define models to query (falls back to kms.knowledge.article if custom model exists)
-ARTICLE_MODELS = ['handmade.knowledge.article', 'kms.knowledge.article']
-TAG_MODELS = ['handmade.knowledge.tag', 'res.partner.category']
+# Define models to query (primary: assignment kms, secondary: handmade)
+ARTICLE_MODELS = ['kms.knowledge.article', 'handmade.knowledge.article']
+TAG_MODELS = ['res.partner.category', 'handmade.knowledge.tag']
 
 URL = f"http://{HOST}:{PORT}"
 
 def main():
     print("=" * 60)
-    print("        ODOO 19 XML-RPC DATA RETRIEVAL GATEWAY")
+    print("        KMS METADATA-AWARE XML-RPC GATEWAY CLIENT")
     print("=" * 60)
     print(f"Connecting to {URL}...")
     
@@ -41,7 +41,7 @@ def main():
         version = common.version()
         print(f"Server Odoo version: {version.get('server_version')}")
     except Exception as e:
-        print(f"Error: Cannot connect to Odoo server. Make sure it is running on port {PORT}.")
+        print(f"Error: Cannot connect to Odoo server. Make sure Odoo is running.")
         print(f"Details: {e}")
         sys.exit(1)
 
@@ -49,21 +49,20 @@ def main():
     try:
         uid = common.authenticate(DB, USER, PASSWORD, {})
         if not uid:
-            print("Authentication failed! Please check your database name and credentials.")
+            print("Authentication failed! Please check credentials.")
             sys.exit(1)
         print(f"Authentication successful! User UID: {uid}")
     except Exception as e:
         print(f"Authentication error: {e}")
         sys.exit(1)
 
-    # 3. Establish connection to object service for executing database operations
+    # 3. Establish connection to object service
     models = xmlrpc.client.ServerProxy(f'{URL}/xmlrpc/2/object')
 
-    # Detect which article model is active in the database
+    # Detect active article model in the database
     active_article_model = None
     for model in ARTICLE_MODELS:
         try:
-            # Check if model exists by trying to search with limit 1
             models.execute_kw(DB, uid, PASSWORD, model, 'search', [[]], {'limit': 1})
             active_article_model = model
             break
@@ -71,13 +70,12 @@ def main():
             continue
 
     if not active_article_model:
-        print(f"Error: None of the article models {ARTICLE_MODELS} were found in database '{DB}'.")
-        print("Please ensure your custom module is installed and database upgraded.")
+        print(f"Error: None of the models {ARTICLE_MODELS} were found.")
         sys.exit(1)
         
     print(f"Active Article Model detected: '{active_article_model}'")
 
-    # Detect which tag model is active
+    # Detect active tag model
     active_tag_model = None
     for model in TAG_MODELS:
         try:
@@ -90,19 +88,26 @@ def main():
 
     # 4. Fetch Articles
     print(f"\nQuerying articles from '{active_article_model}'...")
-    fields_to_read = [
-        'name', 
-        'content', 
-        'visibility', 
-        'source_type', 
-        'dimension', 
-        'functional_topic', 
-        'property_4', 
-        'tag_ids',
-        'breadcrumb_path'
-    ]
     
-    # We query only active articles (excluding Trash)
+    # Use fields corresponding to the active model schema
+    if active_article_model == 'kms.knowledge.article':
+        fields_to_read = [
+            'name', 
+            'body_html', 
+            'workspace_dimension', 
+            'tag_ids',
+            'breadcrumb_path'
+        ]
+    else:
+        # Fallback to old handmade model fields
+        fields_to_read = [
+            'name', 
+            'content', 
+            'visibility', 
+            'tag_ids',
+            'breadcrumb_path'
+        ]
+        
     domain = [('active', '=', True)]
     
     try:
@@ -118,10 +123,9 @@ def main():
         print(f"Error reading articles: {e}")
         sys.exit(1)
 
-    # 5. Fetch and map Tag names (Many2many fields return list of IDs like [1, 2])
+    # 5. Fetch and map Tag names
     tag_mapping = {}
     if active_tag_model:
-        # Collect all tag IDs
         all_tag_ids = set()
         for art in articles:
             if art.get('tag_ids'):
@@ -140,26 +144,22 @@ def main():
             except Exception as e:
                 print(f"Warning: Failed to fetch tag details: {e}")
 
-    # 6. Format and Print Data Stream (JSON)
+    # 6. Format and Print Data Stream
     formatted_articles = []
     for art in articles:
-        # Map tag IDs to actual names
         tag_ids = art.get('tag_ids', [])
         tag_names = [tag_mapping.get(tid, f"Tag_{tid}") for tid in tag_ids]
         
-        # Clean HTML content snippet for terminal preview (or keep full HTML)
-        html_content = art.get('content') or ""
+        # Select correct content and dimension based on active schema
+        content_val = art.get('body_html') if 'body_html' in art else art.get('content', '')
+        dimension_val = art.get('workspace_dimension') if 'workspace_dimension' in art else art.get('visibility', 'N/A')
         
         formatted_art = {
             "title": art.get('name'),
             "breadcrumb": art.get('breadcrumb_path') or "Root",
-            "html_content": html_content,
+            "html_content": content_val or "",
             "metadata": {
-                "visibility": art.get('visibility'),
-                "source": art.get('source_type'),
-                "dimension": art.get('dimension'),
-                "functional_topic": art.get('functional_topic') or "N/A",
-                "property_4": art.get('property_4') or "N/A",
+                "dimension": dimension_val,
                 "tags": tag_names
             }
         }
