@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Conversational Chat UI (app.py)
-===============================
+Conversational Chat UI (app.py) - FoodHub Knowledge Assistant
+==============================================================
 Builds a user-friendly conversational interface using Streamlit.
-Provides a sidebar to select simulated User Roles, adjust RAG parameters,
-and enter API keys, with clear warnings for security blocks and fallback scenarios.
+Provides a sidebar to select simulated User Roles, choose LLM Provider (including Ollama),
+adjust RAG parameters, with clear notifications for fallback and guardrail events.
 """
 
 import streamlit as st
@@ -13,17 +13,17 @@ from rag_engine import get_rag_response
 
 # Page layout and styling
 st.set_page_config(
-    page_title="KMS Knowledge Chatbot",
-    page_icon="🤖",
+    page_title="FoodHub Knowledge Assistant",
+    page_icon="🍔",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Custom Styling for vibrant look and premium feel
+# Custom Styling for vibrant FoodHub theme (Warm Orange/Red accents)
 st.markdown("""
 <style>
     .main {
-        background-color: #f9fbfd;
+        background-color: #fcfbfa;
     }
     .stChatInputContainer {
         border-radius: 12px;
@@ -31,14 +31,14 @@ st.markdown("""
     .sidebar-header {
         font-size: 1.2rem;
         font-weight: bold;
-        color: #1F4E78;
-        border-bottom: 2px solid #1F4E78;
+        color: #D35400;
+        border-bottom: 2px solid #D35400;
         padding-bottom: 6px;
         margin-bottom: 12px;
     }
     .user-pill {
-        background-color: #E2F0D9;
-        color: #385723;
+        background-color: #FDEBD0;
+        color: #B9770E;
         padding: 4px 8px;
         border-radius: 8px;
         font-weight: bold;
@@ -47,64 +47,64 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.title("🤖 KMS Knowledge Base RAG Chatbot")
-st.markdown("Hệ thống truy xuất tài liệu SOP và trả lời tự động hỗ trợ vận hành nội bộ.")
+st.title("🍔 FoodHub Knowledge Assistant")
+st.markdown("Retrieval-Augmented Generation (RAG) system for FoodHub sales, purchasing, helpdesk, front-of-house, and technical operations.")
 
 # Sidebar Settings
-st.sidebar.markdown('<p class="sidebar-header">⚙️ CẤU HÌNH HỆ THỐNG</p>', unsafe_allow_html=True)
+st.sidebar.markdown('<p class="sidebar-header">⚙️ CONFIGURATION</p>', unsafe_allow_html=True)
 
-# 1. Simulate Login Role (Security Access)
-st.sidebar.subheader("🔒 Vai trò người dùng (Access Role)")
+# 1. Simulate Login Role
+st.sidebar.subheader("🔒 User Role Simulation")
 selected_role = st.sidebar.selectbox(
-    "Chọn vai trò để mô phỏng kiểm thử phân quyền:",
-    options=["public", "it_staff", "hr_manager"],
+    "Select a role to test clearance & filters:",
+    options=["public", "sales", "purchase", "helpdesk", "foh", "technical"],
     index=0,
     format_func=lambda x: {
-        "public": "Public (Nhân viên chung)",
-        "it_staff": "IT Staff (Kỹ thuật viên IT)",
-        "hr_manager": "HR Manager (Quản lý Nhân sự)"
+        "public": "General Employee (Public)",
+        "sales": "Sales Staff",
+        "purchase": "Purchasing Officer",
+        "helpdesk": "Helpdesk Agent",
+        "foh": "Front-of-House Staff",
+        "technical": "IT & Technical Support"
     }[x]
 )
 
-# Display role details
-if selected_role == "public":
-    st.sidebar.info("🔓 Quyền hạn: Chỉ được truy cập các tài liệu chung (Public).")
-elif selected_role == "it_staff":
-    st.sidebar.info("💻 Quyền hạn: Xem tài liệu IT và tài liệu chung. Bị chặn tài liệu HR.")
-elif selected_role == "hr_manager":
-    st.sidebar.success("👑 Quyền hạn tối cao: Xem toàn bộ tài liệu (HR, IT, Public).")
-
 # 2. LLM Provider Selector
-st.sidebar.subheader("🧠 Cấu hình Mô hình LLM")
+st.sidebar.subheader("🧠 LLM Engine Config")
 llm_provider = st.sidebar.radio(
-    "Chọn nhà cung cấp LLM API:",
-    options=["gemini", "openai"],
+    "Select LLM Provider:",
+    options=["ollama", "gemini", "openai"],
     index=0,
-    format_func=lambda x: "Google Gemini (Miễn phí)" if x == "gemini" else "OpenAI GPT-4o-mini"
+    format_func=lambda x: {
+        "ollama": "Ollama Offline (Llama3)",
+        "gemini": "Google Gemini (Online)",
+        "openai": "OpenAI GPT-4o-mini"
+    }[x]
 )
 
-# Load default keys from environment
-default_key = ""
-if llm_provider == "gemini":
-    default_key = os.getenv("GEMINI_API_KEY", "")
-else:
-    default_key = os.getenv("OPENAI_API_KEY", "")
-
-api_key_input = st.sidebar.text_input(
-    f"Nhập {llm_provider.upper()} API Key:",
-    value=default_key,
-    type="password",
-    help="Lấy API Key Gemini miễn phí từ Google AI Studio."
-)
+# API Key input (only for cloud APIs)
+api_key_input = ""
+if llm_provider != "ollama":
+    default_key = ""
+    if llm_provider == "gemini":
+        default_key = os.getenv("GEMINI_API_KEY", "")
+    else:
+        default_key = os.getenv("OPENAI_API_KEY", "")
+        
+    api_key_input = st.sidebar.text_input(
+        f"Enter {llm_provider.upper()} API Key:",
+        value=default_key,
+        type="password"
+    )
 
 # 3. Parameters Selection
-st.sidebar.subheader("🎚️ Tham số RAG & LLM")
-top_k = st.sidebar.slider("Số lượng tài liệu truy xuất (Top-K Chunks):", min_value=1, max_value=5, value=2)
-temperature = st.sidebar.slider("Độ sáng tạo (Temperature):", min_value=0.0, max_value=1.0, value=0.2, step=0.1)
+st.sidebar.subheader("🎚️ RAG & LLM Parameters")
+top_k = st.sidebar.slider("Retrieve Top-K Chunks:", min_value=1, max_value=5, value=2)
+temperature = st.sidebar.slider("Creativity (Temperature):", min_value=0.0, max_value=1.0, value=0.2, step=0.1)
 
 # Reset Chat button
 st.sidebar.markdown("---")
-if st.sidebar.button("🧹 Xóa lịch sử chat"):
+if st.sidebar.button("🧹 Clear Chat History"):
     st.session_state.messages = []
     st.rerun()
 
@@ -119,7 +119,7 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
         if "sources" in message and message["sources"]:
-            st.markdown(f"**📚 Tài liệu nguồn:** `{', '.join(message['sources'])}`")
+            st.markdown(f"**📚 Sources:** `{', '.join(message['sources'])}`")
         if "status_alert" in message:
             alert_type, alert_msg = message["status_alert"]
             if alert_type == "warning":
@@ -128,11 +128,11 @@ for message in st.session_state.messages:
                 st.error(alert_msg)
 
 # Handle new user inputs
-if user_query := st.chat_input("Nhập câu hỏi tại đây..."):
+if user_query := st.chat_input("Ask a question about FoodHub procedures..."):
     # Display user question
     with st.chat_message("user"):
         st.markdown(user_query)
-        st.markdown(f"<span class=\"user-pill\">Mô phỏng vai trò: {selected_role}</span>", unsafe_allow_html=True)
+        st.markdown(f"<span class=\"user-pill\">Simulated Role: {selected_role}</span>", unsafe_allow_html=True)
     
     st.session_state.messages.append({
         "role": "user",
@@ -140,7 +140,7 @@ if user_query := st.chat_input("Nhập câu hỏi tại đây..."):
     })
     
     # Process RAG response
-    with st.spinner("🤖 Đang tìm kiếm tài liệu và suy luận..."):
+    with st.spinner("🤖 Retrieving knowledge & generating answer..."):
         response = get_rag_response(
             query_string=user_query,
             user_role=selected_role,
@@ -156,15 +156,15 @@ if user_query := st.chat_input("Nhập câu hỏi tại đây..."):
         
         # Display sources if any
         if response.get("sources"):
-            st.markdown(f"**📚 Tài liệu nguồn:** `{', '.join(response['sources'])}`")
+            st.markdown(f"**📚 Sources:** `{', '.join(response['sources'])}`")
             
         # Display status warnings
         status_alert = None
         if response.get("guardrail_triggered"):
-            status_alert = ("error", "🚨 Cảnh báo: Câu hỏi bị hệ thống Guardrails từ chối trả lời do vi phạm chính sách bảo mật nội bộ.")
+            status_alert = ("error", "🚨 Guardrail Event: The query was intercepted by the guardrail filter (Scenario 6/7/8).")
             st.error(status_alert[1])
         elif response.get("fallback_triggered"):
-            status_alert = ("warning", "⚠️ Kịch bản Fallback: Không tìm thấy tài liệu phù hợp trong KMS hoặc LLM bị lỗi kết nối.")
+            status_alert = ("warning", "⚠️ Fallback Event: A fallback scenario was triggered (Scenario 1/2).")
             st.warning(status_alert[1])
 
     # Save to history

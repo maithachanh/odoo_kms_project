@@ -36,7 +36,7 @@
                                 <div class="oe_title">
                                     <label for="name" class="oe_edit_only" string="Article Title"/>
                                     <h1>
-                                        <field name="name" placeholder="e.g. Welcome to Employee Handbook"/>
+                                        <field name="name" placeholder="e.g. Customer Complaint Handling"/>
                                     </h1>
                                 </div>
                                 <!-- HTML Editor -->
@@ -153,11 +153,14 @@
                     <field name="name" string="Title"/>
                     <field name="body_html" string="Content"/>
                     <field name="tag_ids"/>
-                    <filter string="Workspace Dimension - HR" name="dim_hr" domain="[('workspace_dimension', '=', 'hr')]"/>
-                    <filter string="Workspace Dimension - IT" name="dim_it" domain="[('workspace_dimension', '=', 'it')]"/>
-                    <filter string="Workspace Dimension - Sales" name="dim_sales" domain="[('workspace_dimension', '=', 'sales')]"/>
-                    <filter string="Workspace Dimension - Ops" name="dim_ops" domain="[('workspace_dimension', '=', 'ops')]"/>
-                    <filter string="Workspace Dimension - Legal" name="dim_legal" domain="[('workspace_dimension', '=', 'legal')]"/>
+                    <filter string="Sales" name="dim_sales" domain="[('workspace_dimension', '=', 'sales')]"/>
+                    <filter string="Purchase" name="dim_purchase" domain="[('workspace_dimension', '=', 'purchase')]"/>
+                    <filter string="Helpdesk" name="dim_helpdesk" domain="[('workspace_dimension', '=', 'helpdesk')]"/>
+                    <filter string="Front-of-House" name="dim_foh" domain="[('workspace_dimension', '=', 'foh')]"/>
+                    <filter string="Technical &amp; IT" name="dim_technical" domain="[('workspace_dimension', '=', 'technical')]"/>
+                    <filter string="Operations" name="dim_ops" domain="[('workspace_dimension', '=', 'ops')]"/>
+                    <filter string="HR" name="dim_hr" domain="[('workspace_dimension', '=', 'hr')]"/>
+                    <filter string="Legal" name="dim_legal" domain="[('workspace_dimension', '=', 'legal')]"/>
                     <separator/>
                     <filter string="Favorites" name="favorite" domain="[('is_favorite', '=', True)]"/>
                     <filter string="Root Articles" name="root" domain="[('parent_id', '=', False)]"/>
@@ -179,10 +182,10 @@
             <field name="search_view_id" ref="view_kms_knowledge_article_search"/>
             <field name="help" type="html">
                 <p class="o_view_nocontent_smiling_face">
-                    Create your first KMS article!
+                    Create your first knowledge article!
                 </p>
                 <p>
-                    Organize your team's SOPs, guidelines, and documentation in a structured tree.
+                    Organize FoodHub's SOPs, procedures, and operational documentation.
                 </p>
             </field>
         </record>
@@ -232,7 +235,7 @@
                                 </div>
                                 <div class="mt-2 pt-2 border-top d-flex justify-content-between align-items-center">
                                     <field name="tag_ids" widget="many2many_tags" options="{'color_field': 'color'}"/>
-                                    <span class="text-primary small font-weight-bold"><i class="fa fa-comments-o"/> Trò chuyện</span>
+                                    <span class="text-primary small font-weight-bold"><i class="fa fa-comments-o"/> Chat</span>
                                 </div>
                             </div>
                         </t>
@@ -247,7 +250,7 @@
             <field name="arch" type="xml">
                 <form string="AI Agent">
                     <header>
-                        <button name="action_synthesize_document" string="Tổng hợp tài liệu" type="object" class="btn-primary" icon="fa-file-text-o"/>
+                        <button name="action_synthesize_document" string="Synthesize Document" type="object" class="btn-primary" icon="fa-file-text-o"/>
                     </header>
                     <sheet>
                         <div class="row mb-4">
@@ -257,17 +260,17 @@
                                         AI
                                     </div>
                                     <div>
-                                        <h1 class="mb-0 text-slate-800"><field name="name" placeholder="Tên Agent..."/></h1>
-                                        <div class="text-muted font-weight-bold" style="font-size: 1.1em;"><field name="model_provider" placeholder="Mô hình LLM..."/></div>
+                                        <h1 class="mb-0 text-slate-800"><field name="name" placeholder="Agent Name..."/></h1>
+                                        <div class="text-muted font-weight-bold" style="font-size: 1.1em;"><field name="model_provider" placeholder="LLM Model..."/></div>
                                     </div>
                                 </div>
                                 <div class="mb-3">
-                                    <label for="description" class="font-weight-bold text-secondary" string="Mô tả nhiệm vụ"/>
-                                    <field name="description" placeholder="Mô tả vai trò của Agent này..."/>
+                                    <label for="description" class="font-weight-bold text-secondary" string="Task Description"/>
+                                    <field name="description" placeholder="Describe the role of this Agent..."/>
                                 </div>
                             </div>
                             <div class="col-12 col-md-4 p-3 bg-light rounded border border-light shadow-sm" style="background: #f8fafc;">
-                                <h4 class="text-primary pb-2 border-bottom" style="font-size: 1.1em; font-weight: 600;"><i class="fa fa-info-circle"/> Cấu hình Agent</h4>
+                                <h4 class="text-primary pb-2 border-bottom" style="font-size: 1.1em; font-weight: 600;"><i class="fa fa-info-circle"/> Agent Configuration</h4>
                                 <div class="mb-3">
                                     <label for="tag_ids" class="font-weight-bold form-label d-block mb-1" string="Tags"/>
                                     <field name="tag_ids" widget="many2many_tags" options="{'color_field': 'color'}"/>
@@ -278,16 +281,16 @@
                         <!-- Chat Interaction Container -->
                         <div class="card shadow-sm mb-4" style="border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden;">
                             <div class="card-header text-white py-2 px-3" style="background-color: #4f46e5; border-bottom: 1px solid #4f46e5;">
-                                <h4 class="mb-0 text-white" style="font-size: 1.1em; font-weight: 600;"><i class="fa fa-comments"/> Gửi câu hỏi cho AI Agent</h4>
+                                <h4 class="mb-0 text-white" style="font-size: 1.1em; font-weight: 600;"><i class="fa fa-comments"/> Ask AI Agent</h4>
                             </div>
                             <div class="card-body p-3" style="background: #f1f5f9;">
                                 <div class="row align-items-end">
                                     <div class="col-10">
-                                        <label for="user_query" class="font-weight-bold text-slate-700 mb-1" string="Nhập câu hỏi của bạn:"/>
-                                        <field name="user_query" class="form-control" style="font-size: 1.05em;" placeholder="Hỏi tôi bất cứ câu hỏi nào về tài liệu hoặc quy định..."/>
+                                        <label for="user_query" class="font-weight-bold text-slate-700 mb-1" string="Enter your question:"/>
+                                        <field name="user_query" class="form-control" style="font-size: 1.05em;" placeholder="Ask me anything about FoodHub procedures or policies..."/>
                                     </div>
                                     <div class="col-2">
-                                        <button name="action_ask_ai" string="Hỏi AI" type="object" class="btn btn-primary w-100" icon="fa-paper-plane" style="background-color: #4f46e5; border-color: #4f46e5; font-weight: 600; padding: 7px;"/>
+                                        <button name="action_ask_ai" string="Ask AI" type="object" class="btn btn-primary w-100" icon="fa-paper-plane" style="background-color: #4f46e5; border-color: #4f46e5; font-weight: 600; padding: 7px;"/>
                                     </div>
                                 </div>
                             </div>
@@ -295,13 +298,13 @@
 
                         <!-- Chat Dialog/Log -->
                         <div class="mt-4">
-                            <h3 class="mb-3 text-secondary pb-2 border-bottom" style="font-size: 1.25em; font-weight: 600;"><i class="fa fa-history"/> Nhật ký đối thoại</h3>
+                            <h3 class="mb-3 text-secondary pb-2 border-bottom" style="font-size: 1.25em; font-weight: 600;"><i class="fa fa-history"/> Chat History</h3>
                             <field name="chat_line_ids" readonly="1">
                                 <list>
-                                    <field name="create_date" string="Thời gian"/>
-                                    <field name="user_query" string="Câu hỏi"/>
-                                    <field name="ai_response" string="Câu trả lời"/>
-                                    <field name="sources" string="Nguồn tham khảo"/>
+                                    <field name="create_date" string="Timestamp"/>
+                                    <field name="user_query" string="Question"/>
+                                    <field name="ai_response" string="AI Response"/>
+                                    <field name="sources" string="Sources"/>
                                 </list>
                             </field>
                         </div>
@@ -317,10 +320,10 @@
             <field name="view_mode">kanban,form</field>
             <field name="help" type="html">
                 <p class="o_view_nocontent_smiling_face">
-                    Tạo AI Agent đầu tiên!
+                    Create your first AI Agent!
                 </p>
                 <p>
-                    Native Odoo Chatbot tích hợp RAG và tổng hợp tài liệu tự động.
+                    Native Odoo AI Chatbot with RAG integration and automatic document synthesis.
                 </p>
             </field>
         </record>

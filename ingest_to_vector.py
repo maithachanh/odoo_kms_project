@@ -25,7 +25,7 @@ except ImportError:
 
 # Yêu cầu: Sử dụng langchain_chroma (không phải langchain_community)
 from langchain_chroma import Chroma
-from langchain_community.embeddings import OllamaEmbeddings
+from langchain_community.embeddings import HuggingFaceEmbeddings
 
 # Nạp các biến môi trường cấu hình (nếu có)
 load_dotenv()
@@ -33,7 +33,7 @@ load_dotenv()
 # Cấu hình đường dẫn lưu trữ và tên Collection
 PERSIST_DIR = "./chroma_db"
 COLLECTION_NAME = "kms_collection"
-EMBEDDING_MODEL = "nomic-embed-text"
+EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 
 # Cấu hình kết nối Odoo XML-RPC
 HOST = os.getenv("ODOO_HOST", "localhost")
@@ -188,32 +188,8 @@ def main():
     if not articles:
         articles = fetch_articles_from_excel_template()
 
-    # Đảm bảo có các bài viết mẫu phục vụ cho việc kiểm thử bảo mật của đề bài
-    test_titles = [a['title'] for a in articles]
-    if "IT Engineer Onboarding Protocol" not in test_titles:
-        articles.append({
-            'title': "IT Engineer Onboarding Protocol",
-            'body_html': "<h2>IT Engineer Onboarding Protocol</h2><p>Welcome to the Engineering team. Upon arrival, all new IT technical hires must initialize their corporate GitHub profiles and configure their local environments according to the Dev guidelines.</p>",
-            'tags': ["SOP", "Hardware"]
-        })
-    if "General Workspace Conduct Guideline" not in test_titles:
-        articles.append({
-            'title': "General Workspace Conduct Guideline",
-            'body_html': "<h2>General Workspace Conduct Guideline</h2><p>It is our company policy to maintain an open, welcoming environment for all incoming cross-functional personnel and respect diversity.</p>",
-            'tags': ["HR", "Policy"]
-        })
-    if "Network Security & System Firewall Policy" not in test_titles:
-        articles.append({
-            'title': "Network Security & System Firewall Policy",
-            'body_html': "<h2>Network Security & System Firewall Policy</h2><p>In the event of system safety infractions, technical staff must trigger the automated port isolation protocol immediately to protect internal corporate data and network logs.</p>",
-            'tags': ["SOP", "Network"]
-        })
-    if "Acceptable Hardware Use Agreement" not in test_titles:
-        articles.append({
-            'title': "Acceptable Hardware Use Agreement",
-            'body_html': "<h2>Acceptable Hardware Use Agreement</h2><p>Disciplinary actions regarding corporate computing hardware safety violations will follow the general terms outlined in section 5. Ensure all devices have local antiviruses.</p>",
-            'tags': ["Policy", "Hardware"]
-        })
+    # No hardcoded test articles appended; relying on FoodHub Excel articles.
+    pass
 
     # BƯỚC 3: Cấu hình bộ chia nhỏ văn bản (Text Splitter)
     # chunk_size=500 ký tự, chunk_overlap=100 ký tự đệm để không mất bối cảnh
@@ -249,10 +225,10 @@ def main():
 
     print(f"Đã chia nhỏ văn bản thành {len(chunks_list)} chunks.")
 
-    # BƯỚC 5: Khởi tạo Ollama Embeddings với model nomic-embed-text
-    # Mô hình này không dùng OpenAI, chạy hoàn toàn offline miễn phí cục bộ.
-    print(f"Đang khởi tạo Ollama Embeddings (Model: '{EMBEDDING_MODEL}')...")
-    embeddings = OllamaEmbeddings(model=EMBEDDING_MODEL)
+    # BƯỚC 5: Khởi tạo HuggingFace Embeddings
+    # Mô hình này không dùng OpenAI/Ollama, chạy hoàn toàn offline miễn phí cục bộ.
+    print(f"Đang khởi tạo HuggingFace Embeddings (Model: '{EMBEDDING_MODEL}')...")
+    embeddings = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL)
 
     # BƯỚC 6: Khởi tạo Chroma DB và lưu persistent (vật lý) xuống đĩa cứng
     # Sử dụng package langchain_chroma theo đúng yêu cầu đề bài.

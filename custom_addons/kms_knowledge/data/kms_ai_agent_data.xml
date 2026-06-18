@@ -1,22 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
-        <record id="kms_ai_agent_odoo" model="kms.ai.agent">
-            <field name="name">Odoo Agent</field>
-            <field name="model_provider">GPT 4o</field>
-            <field name="description">Your Odoo sidekick for most day-to-day tasks.</field>
+        <record id="kms_ai_agent_foodhub" model="kms.ai.agent">
+            <field name="name">FoodHub Knowledge Assistant</field>
+            <field name="model_provider">Ollama (Phi3)</field>
+            <field name="description">Internal AI-powered knowledge assistant for FoodHub. Answers questions about sales, purchasing, helpdesk, front-of-house, and technical operations using RAG from the FoodHub knowledge base.</field>
         </record>
 
         <record id="kms_ai_agent_livechat" model="kms.ai.agent">
             <field name="name">Livechat AI Agent</field>
-            <field name="model_provider">GPT 4o</field>
-            <field name="description">Handles visitor conversations through live chat.</field>
+            <field name="model_provider">Ollama (Phi3)</field>
+            <field name="description">Handles visitor conversations through live chat with knowledge-grounded responses.</field>
         </record>
 
-        <record id="kms_ai_agent_ask" model="kms.ai.agent">
-            <field name="name">Ask AI</field>
-            <field name="model_provider">Gemini 1.5 Flash</field>
-            <field name="description">Used for searching information across your database.</field>
+        <record id="kms_ai_agent_synthesizer" model="kms.ai.agent">
+            <field name="name">Document Synthesizer</field>
+            <field name="model_provider">Ollama (Phi3)</field>
+            <field name="description">Aggregates and compiles knowledge base articles into a consolidated operations handbook.</field>
         </record>
     </data>
 </odoo>

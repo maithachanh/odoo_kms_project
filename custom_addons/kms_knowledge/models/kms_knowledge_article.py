@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from odoo import models, fields, api
 
+
 class KmsKnowledgeArticle(models.Model):
     _name = 'kms.knowledge.article'
     _description = 'KMS Knowledge Article'
@@ -26,14 +27,18 @@ class KmsKnowledgeArticle(models.Model):
         string='Tags'
     )
     
-    # Selection for workspace dimensions (HR, IT, Sales, Ops, Legal)
+    # Selection for workspace dimensions — FoodHub operational areas
     workspace_dimension = fields.Selection([
+        ('sales', 'Sales'),
+        ('purchase', 'Purchase'),
+        ('helpdesk', 'Helpdesk'),
+        ('foh', 'Front-of-House'),
+        ('technical', 'Technical & IT'),
+        ('ops', 'Operations'),
         ('hr', 'HR'),
         ('it', 'IT'),
-        ('sales', 'Sales'),
-        ('ops', 'Ops'),
         ('legal', 'Legal')
-    ], string='Workspace Dimension', default='hr', required=True)
+    ], string='Workspace Dimension', default='ops', required=True)
 
     sequence = fields.Integer(string='Sequence', default=10)
     is_favorite = fields.Boolean(string='Favorite', default=False)
@@ -69,20 +74,21 @@ class KmsKnowledgeArticle(models.Model):
                 current = current.parent_id
             record.breadcrumb_path = " / ".join(reversed(names)) if names else ""
 
+
 class KmsAiAgent(models.Model):
     _name = 'kms.ai.agent'
     _description = 'KMS AI Agent'
 
     name = fields.Char(string='Agent Name', required=True)
-    model_provider = fields.Char(string='Model', default='Gemini 1.5 Flash')
+    model_provider = fields.Char(string='Model', default='Ollama (Phi3)')
     description = fields.Text(string='Description')
     tag_ids = fields.Many2many('res.partner.category', string='Tags')
     image_url = fields.Char(string='Image URL')
     chat_line_ids = fields.One2many('kms.ai.agent.chat.line', 'agent_id', string='Chat History')
-    user_query = fields.Char(string='Nhập câu hỏi')
+    user_query = fields.Char(string='Enter your question')
 
     def action_ask_ai(self):
-        """Sends user_query to the host RAG API and gets response."""
+        """Sends user_query to the host RAG API and gets response via Ollama."""
         self.ensure_one()
         if not self.user_query:
             return
@@ -97,19 +103,21 @@ class KmsAiAgent(models.Model):
         if self.env.user.has_group('base.group_system'):
             user_role = 'hr_manager'
         
+        # RAG API runs on host machine port 8000
+        # From Docker container, host.docker.internal resolves to the host machine
         url = "http://host.docker.internal:8000/query"
         payload = {
             "query": self.user_query,
             "role": user_role,
-            "provider": "gemini"
+            "provider": "ollama"  # Use Ollama for offline LLM
         }
         try:
-            response = requests.post(url, json=payload, timeout=15)
+            response = requests.post(url, json=payload, timeout=300)
             if response.status_code == 200:
                 res_data = response.json()
-                answer = res_data.get("answer", "Không có câu trả lời.")
+                answer = res_data.get("answer", "No answer available.")
                 sources_list = res_data.get("sources", [])
-                sources = ", ".join(sources_list) if sources_list else "Không rõ nguồn"
+                sources = ", ".join(sources_list) if sources_list else "No source"
                 
                 # Check if guardrail or fallback triggered
                 if res_data.get("guardrail_triggered"):
@@ -132,8 +140,16 @@ class KmsAiAgent(models.Model):
                 }
             else:
                 raise UserError(f"API Server error: {response.text}")
+        except requests.exceptions.ConnectionError:
+            raise UserError(
+                "Cannot connect to RAG API Server at http://host.docker.internal:8000.\n\n"
+                "Please ensure:\n"
+                "1. The RAG API server is running on the host machine: python rag_api.py\n"
+                "2. Ollama is running: ollama serve\n"
+                "3. The llama3 model is downloaded: ollama pull llama3"
+            )
         except Exception as e:
-            raise UserError(f"Không thể kết nối đến máy chủ RAG API: {e}. Vui lòng đảm bảo python rag_api.py đang chạy trên máy Host.")
+            raise UserError(f"Error connecting to RAG API Server: {e}")
 
     def action_synthesize_document(self):
         """Calls host API to read knowledge base, synthesize it, and export as a file."""
@@ -147,14 +163,14 @@ class KmsAiAgent(models.Model):
         url = "http://host.docker.internal:8000/synthesize"
         payload = {
             "agent_id": self.id,
-            "provider": "gemini"
+            "provider": "ollama"  # Use Ollama for offline synthesis
         }
         try:
-            response = requests.post(url, json=payload, timeout=30)
+            response = requests.post(url, json=payload, timeout=120)
             if response.status_code == 200:
                 res_data = response.json()
                 doc_content = res_data.get("document", "")
-                filename = res_data.get("filename", "KMS_Company_Handbook.md")
+                filename = res_data.get("filename", "FoodHub_Operations_Handbook.md")
                 
                 # Create attachment in Odoo
                 attachment = self.env['ir.attachment'].create({
@@ -174,8 +190,14 @@ class KmsAiAgent(models.Model):
                 }
             else:
                 raise UserError(f"API Server error: {response.text}")
+        except requests.exceptions.ConnectionError:
+            raise UserError(
+                "Cannot connect to RAG API Server at http://host.docker.internal:8000.\n\n"
+                "Please ensure the RAG API server is running: python rag_api.py"
+            )
         except Exception as e:
-            raise UserError(f"Không thể kết nối đến máy chủ RAG API: {e}")
+            raise UserError(f"Error connecting to RAG API Server: {e}")
+
 
 class KmsAiAgentChatLine(models.Model):
     _name = 'kms.ai.agent.chat.line'
@@ -183,6 +205,6 @@ class KmsAiAgentChatLine(models.Model):
     _order = 'id desc'
 
     agent_id = fields.Many2one('kms.ai.agent', string='Agent', ondelete='cascade')
-    user_query = fields.Char(string='Câu hỏi')
-    ai_response = fields.Text(string='Câu trả lời')
-    sources = fields.Char(string='Nguồn')
+    user_query = fields.Char(string='Question')
+    ai_response = fields.Text(string='AI Response')
+    sources = fields.Char(string='Sources')

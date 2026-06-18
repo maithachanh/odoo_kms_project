@@ -3,7 +3,7 @@
 Host RAG REST API Server (rag_api.py)
 =====================================
 Exposes a lightweight REST API on port 8000 to bridge Odoo (inside Docker) 
-with the host machine's ChromaDB and LLM integration.
+with the host machine's ChromaDB and LLM integration (Ollama / Gemini / OpenAI).
 
 Endpoints:
 - POST /query: Queries ChromaDB and returns the LLM-generated RAG answer.
@@ -32,6 +32,15 @@ class RAGRequestHandler(BaseHTTPRequestHandler):
     def do_OPTIONS(self):
         self._set_headers(200)
 
+    def do_GET(self):
+        """Health check endpoint."""
+        if self.path == "/health":
+            self._set_headers(200)
+            self.wfile.write(json.dumps({"status": "ok", "message": "RAG API Server is running"}).encode())
+        else:
+            self._set_headers(404)
+            self.wfile.write(json.dumps({"error": "Use POST /query or POST /synthesize"}).encode())
+
     def do_POST(self):
         parsed_path = urlparse(self.path)
         content_length = int(self.headers['Content-Length'])
@@ -56,7 +65,7 @@ class RAGRequestHandler(BaseHTTPRequestHandler):
         """Query ChromaDB and call LLM for answer."""
         query_string = payload.get("query", "")
         user_role = payload.get("role", "public")
-        provider = payload.get("provider", "gemini")
+        provider = payload.get("provider", "ollama")  # Default to Ollama
         api_key = payload.get("api_key", None)
 
         if not query_string:
@@ -79,10 +88,10 @@ class RAGRequestHandler(BaseHTTPRequestHandler):
 
     def handle_synthesize(self, payload):
         """Aggregate all knowledge base documents and compile a consolidated markdown report."""
-        provider = payload.get("provider", "gemini")
+        provider = payload.get("provider", "ollama")  # Default to Ollama
         api_key = payload.get("api_key", None)
         
-        print("[API SYNTHESIZE] Compiling consolidated KMS manual...")
+        print(f"[API SYNTHESIZE] Compiling consolidated KMS manual via {provider}...")
 
         # 1. Fetch all available articles (use local excel backup since Odoo might be offline)
         articles = fetch_articles_from_excel()
@@ -98,50 +107,57 @@ class RAGRequestHandler(BaseHTTPRequestHandler):
             from bs4 import BeautifulSoup
             soup = BeautifulSoup(art['body_html'], "html.parser")
             clean_text = " ".join(soup.get_text().split())
-            knowledge_summary.append(f"Tài liệu {idx}: {art['title']}\nNội dung: {clean_text}")
+            knowledge_summary.append(f"Document {idx}: {art['title']}\nContent: {clean_text}")
 
         context_str = "\n\n".join(knowledge_summary)
         
         synthesis_prompt = (
-            "Bạn là chuyên gia Tổng hợp Tri thức Doanh nghiệp. Dưới đây là danh sách toàn bộ các quy trình, "
-            "hướng dẫn vận hành SOP nội bộ của công ty:\n\n"
+            "You are a Knowledge Synthesis Expert for FoodHub, a fast-food restaurant chain. "
+            "Below is the complete list of operational procedures, SOPs, and internal guidelines:\n\n"
             f"{context_str}\n\n"
-            "YÊU CẦU:\n"
-            "Hãy tổng hợp và biên soạn lại toàn bộ các tài liệu trên thành một cuốn sổ tay hướng dẫn vận hành "
-            "doanh nghiệp (KMS Handbook) chuyên nghiệp bằng định dạng Markdown.\n"
-            "Sổ tay phải có tiêu đề chính, mục lục tự động, phân chia thành các phần rõ ràng (Nhân sự, Kỹ thuật IT, "
-            "Bán hàng, Vận hành), và viết lại nội dung một cách mạch lạc, dễ hiểu, trình bày đẹp mắt."
+            "INSTRUCTIONS:\n"
+            "Please synthesize and compile all the above documents into a professional FoodHub Operations Handbook "
+            "in Markdown format.\n"
+            "The handbook must have a main title, table of contents, and be divided into clear sections "
+            "(Sales, Purchasing, Helpdesk, Front-of-House, Technical & IT), "
+            "with the content rewritten in a clear, concise, and well-formatted manner."
         )
 
         # 3. Call LLM
         # Load API keys if not supplied
-        if not api_key:
+        if not api_key and provider != "ollama":
             if provider == "gemini":
                 api_key = os.getenv("GEMINI_API_KEY")
             else:
                 api_key = os.getenv("OPENAI_API_KEY")
 
-        if not api_key:
-            # Fallback mock document if API Key is missing
+        # For cloud APIs without key, return mock
+        if not api_key and provider not in ("ollama",):
             print("[DRY-RUN] No API Key provided for synthesis. Returning mock document.")
             mock_document = (
-                "# SỔ TAY VẬN HÀNH DOANH NGHIỆP (KMS HANDBOOK)\n\n"
-                "*(Bản phác thảo thử nghiệm - Chưa cấu hình API Key)*\n\n"
-                "## Mục lục\n"
-                "1. Quy trình Nhân sự (HR)\n"
-                "2. Quy trình Kỹ thuật & IT\n"
-                "3. Quy trình Bán hàng & Vận hành\n\n"
-                "## 1. Quy trình Nhân sự (HR)\n"
-                "- Hướng dẫn chào đón nhân viên mới và bàn giao công việc nghỉ việc.\n\n"
-                "## 2. Quy trình Kỹ thuật & IT\n"
-                "- Hướng dẫn thiết lập môi trường máy tính Dev và các chính sách bảo mật mạng.\n\n"
-                "## 3. Quy trình Bán hàng & Vận hành\n"
-                "- Chính sách hỗ trợ khách hàng VIP và quy trình vận hành máy chủ lưu trữ.\n"
+                "# FOODHUB OPERATIONS HANDBOOK\n\n"
+                "*(Draft - No API Key configured)*\n\n"
+                "## Table of Contents\n"
+                "1. Sales Procedures\n"
+                "2. Purchasing Procedures\n"
+                "3. Helpdesk & Delivery\n"
+                "4. Front-of-House Operations\n"
+                "5. Technical & IT Support\n\n"
+                "## 1. Sales Procedures\n"
+                "- Customer handling guidelines, VIP privileges, and POS pricing fixes.\n\n"
+                "## 2. Purchasing Procedures\n"
+                "- Recommended purchasing times and supplier price verification.\n\n"
+                "## 3. Helpdesk & Delivery\n"
+                "- Preventing missing or incorrect deliveries.\n\n"
+                "## 4. Front-of-House Operations\n"
+                "- Customer complaint handling procedures.\n\n"
+                "## 5. Technical & IT Support\n"
+                "- POS system troubleshooting guide.\n"
             )
             self._set_headers(200)
             self.wfile.write(json.dumps({
                 "document": mock_document,
-                "filename": "KMS_Operation_Handbook_Mock.md"
+                "filename": "FoodHub_Operations_Handbook_Mock.md"
             }).encode('utf-8'))
             return
 
@@ -164,6 +180,14 @@ class RAGRequestHandler(BaseHTTPRequestHandler):
                 )
                 response = llm.invoke(synthesis_prompt)
                 document_content = response.content
+            elif provider == "ollama":
+                from langchain_ollama import ChatOllama
+                llm = ChatOllama(
+                    model="phi3",
+                    temperature=0.3
+                )
+                response = llm.invoke(synthesis_prompt)
+                document_content = response.content
             else:
                 self._set_headers(400)
                 self.wfile.write(json.dumps({"error": "Unsupported LLM provider"}).encode())
@@ -172,7 +196,7 @@ class RAGRequestHandler(BaseHTTPRequestHandler):
             self._set_headers(200)
             self.wfile.write(json.dumps({
                 "document": document_content,
-                "filename": "KMS_Company_Operation_Handbook.md"
+                "filename": "FoodHub_Operations_Handbook.md"
             }).encode('utf-8'))
 
         except Exception as e:
@@ -182,7 +206,13 @@ class RAGRequestHandler(BaseHTTPRequestHandler):
 def run(server_class=HTTPServer, handler_class=RAGRequestHandler, port=PORT):
     server_address = ('', port)
     httpd = server_class(server_address, handler_class)
-    print(f"RAG REST API Server running on port {port}...")
+    print("=" * 60)
+    print(f"  FoodHub RAG REST API Server running on port {port}")
+    print(f"  Endpoints:")
+    print(f"    POST /query      - Query knowledge base with RAG")
+    print(f"    POST /synthesize - Compile operations handbook")
+    print(f"    GET  /health     - Health check")
+    print("=" * 60)
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
