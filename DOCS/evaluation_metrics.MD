@@ -1,0 +1,279 @@
+# FoodHub Knowledge Assistant - Evaluation Metrics
+
+## Purpose
+
+This document defines the evaluation methodology used to assess the performance of the FoodHub Knowledge Assistant.
+
+The evaluation focuses on determining whether the chatbot can accurately retrieve and generate responses based on knowledge stored in the FoodHub Knowledge Base while preventing hallucinations and handling exceptions appropriately.
+
+---
+
+# Evaluation Objectives
+
+The evaluation aims to verify that the chatbot can:
+
+- Retrieve relevant knowledge from the Vector Database.
+- Provide accurate and context-grounded responses.
+- Avoid generating unsupported information.
+- Follow defined fallback rules when information is unavailable.
+- Support FoodHub operational processes effectively.
+
+---
+
+# Evaluation Criteria
+
+## 1. Accuracy
+
+Measures whether the answer correctly reflects the retrieved knowledge.
+
+| Score | Description                  |
+| ----- | ---------------------------- |
+| 5     | Completely accurate          |
+| 4     | Minor omissions but accurate |
+| 3     | Partially correct            |
+| 2     | Mostly incorrect             |
+| 1     | Completely incorrect         |
+
+---
+
+## 2. Groundedness
+
+Measures whether the answer is supported by retrieved documents.
+
+| Score | Description                         |
+| ----- | ----------------------------------- |
+| 5     | Fully grounded in retrieved context |
+| 4     | Mostly grounded                     |
+| 3     | Partially grounded                  |
+| 2     | Weak grounding                      |
+| 1     | Hallucinated content present        |
+
+---
+
+## 3. Completeness
+
+Measures whether the chatbot covers all relevant information contained in the retrieved documents.
+
+| Score | Description                     |
+| ----- | ------------------------------- |
+| 5     | Fully complete                  |
+| 4     | Minor details missing           |
+| 3     | Several details missing         |
+| 2     | Significant information missing |
+| 1     | Incomplete answer               |
+
+---
+
+## 4. Fallback Compliance
+
+Measures whether the chatbot correctly follows fallback rules when information is missing, irrelevant, or unavailable.
+
+| Score | Description                 |
+| ----- | --------------------------- |
+| Pass  | Correct fallback behavior   |
+| Fail  | Incorrect fallback behavior |
+
+---
+
+## 5. User Satisfaction
+
+Measures tester perception of usefulness and clarity.
+
+| Score | Description    |
+| ----- | -------------- |
+| 5     | Excellent      |
+| 4     | Good           |
+| 3     | Acceptable     |
+| 2     | Poor           |
+| 1     | Unsatisfactory |
+
+---
+
+# Test Dataset
+
+The following representative questions were used during system testing.
+
+## Sales
+
+### Test Case 1
+
+Question:
+
+"How should employees handle customers with poor payment history?"
+
+Expected Knowledge Source:
+
+- Poor Payment History Customer
+
+---
+
+### Test Case 2
+
+Question:
+
+"What benefits are available for VIP customers?"
+
+Expected Knowledge Source:
+
+- VIP Customer Privileges
+
+---
+
+### Test Case 3
+
+Question:
+
+"How can pricing errors be fixed in the POS system?"
+
+Expected Knowledge Source:
+
+- POS Pricing Fixes
+
+---
+
+## Purchase
+
+### Test Case 4
+
+Question:
+
+"When is the recommended time for purchasing inventory?"
+
+Expected Knowledge Source:
+
+- Recommended Time for Purchasing
+
+---
+
+### Test Case 5
+
+Question:
+
+"Why should unusually low supplier prices be avoided?"
+
+Expected Knowledge Source:
+
+- Avoid Purchasing at Unusually Low Prices
+
+---
+
+## Helpdesk
+
+### Test Case 6
+
+Question:
+
+"How can staff prevent missing or incorrect deliveries?"
+
+Expected Knowledge Source:
+
+- Preventing Missing or Incorrect Item Deliveries
+
+---
+
+## Front-of-House
+
+### Test Case 7
+
+Question:
+
+"How should customer complaints be handled?"
+
+Expected Knowledge Source:
+
+- Customer Complaint Handling
+
+---
+
+## Technical & System
+
+### Test Case 8
+
+Question:
+
+"What should I do if the POS system is not responding?"
+
+Expected Knowledge Source:
+
+- POS System Troubleshooting Guide
+
+---
+
+## Out-of-Scope Validation
+
+### Test Case 9
+
+Question:
+
+"Who will win the next FIFA World Cup?"
+
+Expected Behavior:
+
+- Refuse to answer.
+- Follow fallback rules.
+
+---
+
+## Missing Knowledge Validation
+
+### Test Case 10
+
+Question:
+
+"What is FoodHub's employee reimbursement policy?"
+
+Expected Behavior:
+
+- No relevant knowledge found.
+- Trigger fallback response.
+
+---
+
+# Evaluation Results Template
+
+| Test Case | Accuracy | Groundedness | Completeness | Fallback Compliance | User Satisfaction | Notes |
+| --------- | -------- | ------------ | ------------ | ------------------- | ----------------- | ----- |
+| TC-01     |          |              |              |                     |                   |       |
+| TC-02     |          |              |              |                     |                   |       |
+| TC-03     |          |              |              |                     |                   |       |
+| TC-04     |          |              |              |                     |                   |       |
+| TC-05     |          |              |              |                     |                   |       |
+| TC-06     |          |              |              |                     |                   |       |
+| TC-07     |          |              |              |                     |                   |       |
+| TC-08     |          |              |              |                     |                   |       |
+| TC-09     |          |              |              |                     |                   |       |
+| TC-10     |          |              |              |                     |                   |       |
+
+---
+
+# Findings
+
+## Strengths
+
+The chatbot successfully:
+
+- Retrieves relevant operational knowledge from the Vector Database.
+- Provides answers grounded in FoodHub documentation.
+- Supports sales, purchasing, helpdesk, customer service, and technical operations.
+- Prevents hallucinations by following predefined fallback rules.
+
+---
+
+## Limitations
+
+The chatbot's performance depends on:
+
+- Quality of knowledge articles.
+- Completeness of uploaded documentation.
+- Retrieval accuracy of the Vector Database.
+- Consistency of knowledge maintenance.
+
+If information is not stored in the FoodHub Knowledge Base, the chatbot cannot provide an answer.
+
+---
+
+# Conclusion
+
+The FoodHub Knowledge Assistant demonstrates the ability to retrieve and provide operational knowledge from the company's knowledge repository while maintaining factual accuracy and minimizing hallucinations through controlled fallback mechanisms.
+
+The evaluation confirms that the chatbot effectively supports operational knowledge sharing across FoodHub's sales, purchasing, customer service, helpdesk, and technical support functions.
