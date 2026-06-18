@@ -1,152 +1,162 @@
-# Odoo v19 Community Local Deployment & Knowledge Migration
+# Odoo v19 KMS & Secure RAG Chatbot Integration
 
-## 🎯 Project Goal
-Deploy a **local Odoo 19 Community** environment using Docker, expose the PostgreSQL database, activate the **Website** and **Live Chat** modules, install the **To‑Do** module (as a lightweight KMS), and provide a clear workflow for importing Phase 1 SOP/Documentation data (Excel) and for connecting external DB clients (pgAdmin/DBeaver).
+## 🎯 Project Overview
+This project integrates a **custom KMS Knowledge module** in Odoo 19 with a local, secure **Retrieval-Augmented Generation (RAG) AI Chatbot**. Instead of redirecting users externally, the chatbot is natively integrated into Odoo, allowing employees to search internal SOP documentation and compile aggregated knowledge handbooks directly within the ERP interface.
+
+```
+                  ┌──────────────────────────────────────────────┐
+                  │            Host Machine (Local)              │
+                  │                                              │
+                  │  ┌───────────────┐        ┌───────────────┐  │
+                  │  │  Chroma DB    │        │    Ollama     │  │
+                  │  │ (./chroma_db) │        │ (nomic-embed) │  │
+                  │  └───────┬───────┘        └───────┬───────┘  │
+                  │          │                        │          │
+                  │  ┌───────▼────────────────────────▼───────┐  │
+                  │  │          Host RAG API Server           │  │
+                  │  │          (rag_api.py:8000)             │  │
+                  │  └───────────────────▲────────────────────┘  │
+                  └──────────────────────┼───────────────────────┘
+                                         │ Requests (JSON-RPC)
+                  ┌──────────────────────┼───────────────────────┐
+                  │           Docker Container                   │
+                  │                                              │
+                  │  ┌────────────────────────────────────────┐  │
+                  │  │           Odoo Web Container           │  │
+                  │  │              (odoo19-web)              │  │
+                  │  │  - kms.knowledge.article               │  │
+                  │  │  - kms.ai.agent                        │  │
+                  │  │  - kms.ai.agent.chat.line              │  │
+                  │  └────────────────────────────────────────┘  │
+                  └──────────────────────────────────────────────┘
+```
 
 ---
 
-## 📁 Repository Layout (`d:\odoo19-local`)
+## 📁 Repository Layout
 ```
-├─ docker-compose.yml          # Docker services (Postgres + Odoo) – port 5433 exposed
-├─ odoo.conf                  # Odoo configuration (admin password = admin)
-├─ odoo-data/                 # Persistent Odoo data (mounted in container)
-├─ postgres-data/             # Persistent PostgreSQL data (mounted in container)
-├─ odoo-patches/              # Custom patch for translate.py (optional)
-├─ .dbeaver-data-sources.xml  # DBeaver data source configuration (generated)
-└─ README.md                  # ⬅️ This file
+├─ custom_addons/
+│  └─ kms_knowledge/            # 🧩 Odoo Custom KMS & Chatbot Module
+│     ├─ models/
+│     │  └─ kms_knowledge_article.py # Python models & RAG REST client calls
+│     ├─ security/
+│     │  └─ ir.model.access.csv      # Access Control List (ACL) permissions
+│     ├─ data/
+│     │  └─ kms_ai_agent_data.xml    # Default AI Agent bootstrap records
+│     ├─ views/
+│     │  └─ kms_knowledge_article_views.xml # Native Kanban, Form & List views
+│     └─ __manifest__.py        # Odoo module metadata manifest
+├─ chroma_db/                   # 🗄️ Local vector database directory
+├─ ingest_to_vector.py          # 📥 Vector ingestion pipeline (Ollama nomic-embed-text)
+├─ test_vector_db.py            # 🧪 Automated semantic search & security isolation audit
+├─ rag_engine.py                # 🧠 Core RAG search, fallback & guardrail engine
+├─ rag_api.py                   # 🌐 Host REST API server (port 8000)
+├─ app.py                       # 🖥️ Streamlit standalone UI (optional backup)
+├─ docker-compose.yml           # 🐳 Docker services (Odoo v19 Web + Postgres v15 DB)
+├─ odoo.conf                    # Odoo configuration settings
+├─ requirements.txt             # 📦 Python project dependencies
+└─ README.md                    # ⬅️ This file
 ```
 
 ---
 
-## 🛠️ 1. Starting the Environment (Docker)
+## 🛠️ 1. Installation & Setup Instructions
+
+### Prerequisites
+1. Install **Docker Desktop**.
+2. Install **Ollama** and pull the embedding model:
+   ```bash
+   ollama pull nomic-embed-text
+   ```
+3. Set up Python environment & install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+### Step 1: Spin Up Docker Services
+Bring up Odoo and PostgreSQL containers in the background:
 ```bash
-# From the project root (d:\odoo19-local) run:
- docker-compose up -d   # pulls postgres:15 and odoo:19.0 images, creates containers
+docker-compose up -d
 ```
-- **Odoo container**: `odoo19-web` (exposes port **8069** → http://localhost:8069)
-- **PostgreSQL container**: `odoo19-db` (exposes port **5433** on host → host can connect directly)
-- The `docker‑compose.yml` already maps `5433:5432` so GUI tools can reach the DB.
+- **Odoo Web**: `http://localhost:8069` (login: `admin` / `admin`)
+- **PostgreSQL**: Port `5433` on Host
 
-### Restart / Re‑create a service (e.g., after config change)
+### Step 2: Build the Vector Database
+Ingest articles (extracted from Odoo or fallback Excel templates) into ChromaDB:
 ```bash
-# Re‑create only the DB container (useful when exposing new ports)
- docker-compose up -d --force-recreate db
-
-# Restart Odoo to load new config
- docker-compose restart odoo
+python ingest_to_vector.py
 ```
-
----
-
-## 🔐 2. Odoo Login Details
-- **URL:** `http://localhost:8069`
-- **Database name:** `odoo_kms` (created automatically during the first CLI install)
-- **Admin user:**
-  - **Login:** `admin`
-  - **Password:** `admin`
-- The master password used by the CLI (`odoo.conf`) is also `admin` (plain‑text for simplicity).
-
-> **Tip:** If you need to change the admin password, edit `odoo.conf` → `admin_passwd = <new>` and restart the Odoo container.
-
----
-
-## 📂 3. Database Access (PostgreSQL)
-You can connect from any client that supports PostgreSQL (pgAdmin, DBeaver, psql, etc.).
-
-| Parameter | Value |
-|---|---|
-| **Host** | `localhost` |
-| **Port** | `5433` |
-| **Username** | `odoo` |
-| **Password** | `odoo` |
-| **Database** | `odoo_kms` |
-
-### Example with `psql`
+To verify the database integrity, semantic accuracy, and security role isolation:
 ```bash
-docker exec -it odoo19-db psql -U odoo -d odoo_kms
+python test_vector_db.py
 ```
-You will land in the PostgreSQL prompt (`odoo_kms=>`).
+
+### Step 3: Run the Host RAG API Server
+Start the HTTP REST server to bridge Odoo with the host embedding/LLM models:
+```bash
+python rag_api.py
+```
+
+### Step 4: Upgrade the Odoo Custom Module
+Trigger Odoo to load the new views, permissions, and bootstrap records:
+```bash
+docker exec -i odoo19-web odoo -d odoo_kms -u kms_knowledge --stop-after-init
+docker restart odoo19-web
+```
 
 ---
 
-## ⚙️ 4. DBeaver Configuration
-A ready‑to‑use DBeaver data source file has been generated:
+## 🔒 2. Data Security & RAG Governance
 
-- File: **`.dbeaver-data-sources.xml`** (placed in the project root).
-- It defines a PostgreSQL connection named **`odoo_local_pg`** with the credentials shown above.
-
-### Importing into DBeaver
-1. Open DBeaver.
-2. Choose **File → Import…**.
-3. Select **DBeaver → Data Sources** and click **Next**.
-4. Click **Browse** and locate the `.dbeaver-data-sources.xml` file in the project folder.
-5. Finish the wizard. The new connection will appear in the **Database Navigator**.
-6. Double‑click the connection to test it; you should be connected to the `odoo_kms` database.
-
-If you prefer to create the connection manually, use the same parameters listed in section **3**.
+The RAG Engine (`rag_engine.py`) enforces strict enterprise constraints:
+*   **Role-Based Access Control (RBAC)**: Documents are pre-filtered during vector queries based on the user's Odoo credentials:
+    - `hr_manager` $\rightarrow$ Can query all articles.
+    - `it_staff` $\rightarrow$ Filtered to `it_staff` and `public` articles.
+    - `public` $\rightarrow$ Restricted strictly to `public` articles.
+*   **Predefined Guardrails**: Any query matching restricted terms (salaries, competitors, unpublished financials) is immediately blocked, returning a security notification.
+*   **Fallback Detection**: If the query similarity L2 distance exceeds `450.0` (for `nomic-embed-text`), a clean fallback response is triggered instead of sending the prompt to the LLM, preventing hallucination.
+*   **Dry-Run Mode**: If no `GEMINI_API_KEY` or `OPENAI_API_KEY` is loaded in `.env`, the engine works offline by retrieving the exact document snippets and printing them in the Odoo chat, avoiding network dependencies.
 
 ---
 
-## 🧩 5. Modules Installed (via CLI)
-The following core modules are **pre‑installed**:
-- `base`
-- `website`
-- `website_livechat`
-- `project_todo` (the **To‑Do** app used as a lightweight Knowledge‑Management module)
-- All their dependencies (e.g., `mail`, `web`, `project`, `website_mail`, `website_project`, …)
+## 🖥️ 3. Odoo User Interface & Interactions
 
-You can verify in the UI under **Apps → Installed**.
+### AI Agent Kanban Dashboard
+Navigate to **KMS Knowledge $\rightarrow$ AI Chatbot**. You will see three cards bootstrapped natively:
+*   **Odoo Agent** (Model: GPT 4o)
+*   **Livechat AI Agent** (Model: GPT 4o)
+*   **Ask AI** (Model: Gemini 1.5 Flash)
 
----
+### Interactive Chat & Reload
+1. Click on **Ask AI** to open its form.
+2. Type your question in the query text box.
+3. Click **Hỏi AI**. The backend queries the host API, logs the conversation inside Odoo (`kms.ai.agent.chat.line`), and automatically reloads the view to show the response and cited sources instantly.
 
-## 📦 6. Live Chat Widget (Task 4.3)
-1. Open **Live Chat** app → create/select a channel (e.g., *Support*).
-2. Go to **Website → Configuration → Settings** → enable **Live Chat** and select the channel.
-3. Visit the public site `http://localhost:8069` as a guest; you should see the chat bubble in the lower‑right corner.
-
----
-
-## 📊 7. Importing Phase 1 SOP Data (Excel → To‑Do)
-1. **Create a sample To‑Do record** in Odoo (Title, Description, Tags).
-2. Switch to **List View**, select the record, choose **Action → Export**.
-   - Export the fields `name`, `description`, `tag_ids` (or whatever tag field you use).
-   - Save as **Excel** (`template.xlsx`).
-3. **Map your Phase 1 Excel** columns to the template columns:
-   - `Article Title` → `Name`
-   - `Procedural Content` → `Description` (HTML allowed)
-   - `Metadata Labels` → `Tags`
-4. Paste your data into the template, then **Import** back via **Action → Import**.
-5. Verify the imported records appear correctly in the **To‑Do** list.
+### One-Click Sổ tay (Synthesis Document)
+Click the **Tổng hợp tài liệu** button in the header. The system aggregates all SOP knowledge articles, prompts the LLM to format it into a structured Markdown manual with an automated table of contents, creates an Odoo attachment, and starts an automatic download.
 
 ---
 
-## 🛠️ 8. Common Commands Cheat‑Sheet
-| Command | Description |
-|---|---|
-| `docker ps` | List running containers |
-| `docker logs odoo19-web` | View Odoo logs |
-| `docker exec odoo19-web odoo -c /etc/odoo/odoo.conf -d odoo_kms -i base,website_livechat,project_todo --without-demo=True --stop-after-init` | Re‑initialize DB and install modules |
-| `docker-compose down` | Stop & remove containers (data stays in volumes) |
-| `docker-compose up -d` | Bring everything back up |
-| `docker exec -it odoo19-db psql -U odoo -d odoo_kms` | Open a psql shell inside the DB container |
+## 📥 4. Odoo Enterprise Migration Workflow
 
----
+When importing or exporting documents between Odoo Enterprise and Local environments, follow this guide:
 
-## 📚 9. Where to Find More Info
-- **Official Odoo Docker Guide:** https://github.com/odoo/docker
-- **Odoo 19 Export/Import Docs:** https://www.odoo.com/documentation/19.0/applications/general/export_import.html
-- **Live Chat Documentation:** https://www.odoo.com/documentation/19.0/applications/websites/website/livechat.html
+### Exporting from Odoo Enterprise
+1. Switch to **List View** in the Knowledge module.
+2. Select target articles and select **Actions $\rightarrow$ Export**.
+3. Check **"I want to update data (import-compatible export)"** to generate External IDs.
+4. Select these exact fields:
+   - `id` (External ID)
+   - `name` (Title)
+   - `body` (HTML Content)
+   - `parent_id/id` (Parent Article / External ID) - *Click `>` next to Parent Article and select `External ID`*.
 
----
-
-## 👥 10. Team On‑boarding Checklist
-1. Clone the repository and run `docker-compose up -d`.
-2. Open http://localhost:8069, log in with `admin`/`admin`.
-3. Verify the **Live Chat** widget appears on the homepage.
-4. Connect your DB client using the credentials above (or import the DBeaver data source).
-5. Import the Phase 1 Excel using the template workflow.
-6. Start using the **To‑Do** module as your KMS – add, edit, tag SOPs.
-
----
-
-**Enjoy your local Odoo 19 environment!** 🎉
+### Importing into Odoo Local
+1. Click **Favorites $\rightarrow$ Import records** in KMS Articles list.
+2. Upload the exported file.
+3. Map the columns:
+   - `id` $\rightarrow$ `External ID`
+   - `name` $\rightarrow$ `Display Name`
+   - `body` $\rightarrow$ `Content` *(Manually select from dropdown as our local field is body_html)*
+   - `parent_id/id` $\rightarrow$ `Parent Article / External ID`
+4. Click **Test** and then **Import**.
