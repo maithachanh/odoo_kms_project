@@ -1,4 +1,6 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_kms_knowledge_article,kms.knowledge.article,model_kms_knowledge_article,base.group_user,1,1,1,1
+access_kms_knowledge_article_user,kms.knowledge.article.user,model_kms_knowledge_article,base.group_user,1,0,0,0
+access_kms_knowledge_article_it_staff,kms.knowledge.article.it_staff,model_kms_knowledge_article,kms_knowledge.group_kms_it_staff,1,1,1,0
+access_kms_knowledge_article_hr_manager,kms.knowledge.article.hr_manager,model_kms_knowledge_article,kms_knowledge.group_kms_hr_manager,1,1,1,1
 access_kms_ai_agent,kms.ai.agent,model_kms_ai_agent,base.group_user,1,1,1,1
 access_kms_ai_agent_chat_line,kms.ai.agent.chat.line,model_kms_ai_agent_chat_line,base.group_user,1,1,1,1

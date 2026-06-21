@@ -14,6 +14,7 @@ and metadata-tagging capabilities.
     'author': 'Knowledge Engineers',
     'depends': ['base'],
     'data': [
+        'security/kms_security.xml',
         'security/ir.model.access.csv',
         'views/kms_knowledge_article_views.xml',
         'data/kms_ai_agent_data.xml',

@@ -11,6 +11,7 @@
                     <field name="name"/>
                     <field name="parent_id"/>
                     <field name="workspace_dimension"/>
+                    <field name="access_role"/>
                     <field name="tag_ids" widget="many2many_tags" options="{'color_field': 'color'}"/>
                     <field name="author_id"/>
                     <field name="create_date"/>
@@ -70,6 +71,11 @@
                                     <div class="mb-3">
                                         <label for="workspace_dimension" class="fw-bold form-label d-block mb-1" string="Workspace Dimension"/>
                                         <field name="workspace_dimension" widget="radio"/>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="access_role" class="fw-bold form-label d-block mb-1" string="Access Role"/>
+                                        <field name="access_role" readonly="1"/>
                                     </div>
                                     
                                     <div class="mb-3">
@@ -160,7 +166,12 @@
                     <filter string="Technical &amp; IT" name="dim_technical" domain="[('workspace_dimension', '=', 'technical')]"/>
                     <filter string="Operations" name="dim_ops" domain="[('workspace_dimension', '=', 'ops')]"/>
                     <filter string="HR" name="dim_hr" domain="[('workspace_dimension', '=', 'hr')]"/>
+                    <filter string="IT" name="dim_it" domain="[('workspace_dimension', '=', 'it')]"/>
                     <filter string="Legal" name="dim_legal" domain="[('workspace_dimension', '=', 'legal')]"/>
+                    <separator/>
+                    <filter string="Public Access" name="role_public" domain="[('access_role', '=', 'public')]"/>
+                    <filter string="IT Staff Access" name="role_it_staff" domain="[('access_role', '=', 'it_staff')]"/>
+                    <filter string="HR Manager Access" name="role_hr_manager" domain="[('access_role', '=', 'hr_manager')]"/>
                     <separator/>
                     <filter string="Favorites" name="favorite" domain="[('is_favorite', '=', True)]"/>
                     <filter string="Root Articles" name="root" domain="[('parent_id', '=', False)]"/>

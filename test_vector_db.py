@@ -8,22 +8,26 @@ Loads the persisted vector database and executes:
 """
 
 import os
+os.environ["HF_HUB_OFFLINE"] = "1"
+os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
 import sys
 
 # Đảm bảo terminal của Windows mã hóa UTF-8 để hiển thị đúng biểu tượng emoji
 if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8')
 
-# Yêu cầu: Sử dụng langchain_chroma (không phải langchain_community)
 from langchain_chroma import Chroma
-from langchain_community.embeddings import OllamaEmbeddings
+from langchain_community.embeddings import HuggingFaceEmbeddings
 
 # Đường dẫn đến ChromaDB vật lý lưu trên đĩa và tên Collection
 persist_directory = "./chroma_db"
 collection_name = "kms_collection"
 
-# Khởi tạo mô hình sinh vector tương thích nomic-embed-text chạy offline qua Ollama
-embedding_model = OllamaEmbeddings(model="nomic-embed-text")
+# Khởi tạo mô hình sinh vector tương thích
+embedding_model = HuggingFaceEmbeddings(
+    model_name="sentence-transformers/all-MiniLM-L6-v2",
+    model_kwargs={'local_files_only': True}
+)
 
 # Kiểm tra sự tồn tại của thư mục database trước khi kết nối
 if not os.path.exists(persist_directory):

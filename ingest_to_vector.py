@@ -7,7 +7,10 @@ vào cơ sở dữ liệu Vector (ChromaDB) sử dụng Ollama nomic-embed-text.
 """
 
 import os
+os.environ["HF_HUB_OFFLINE"] = "1"
+os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
 import sys
+import re
 
 # Reconfigure stdout to support UTF-8 on Windows
 if hasattr(sys.stdout, 'reconfigure'):
@@ -42,30 +45,71 @@ DB = os.getenv("ODOO_DB", "odoo_kms")
 USER = os.getenv("ODOO_USER", "admin")
 PASSWORD = os.getenv("ODOO_PASSWORD", "admin")
 
+def get_access_role_for_workspace(workspace_dimension):
+    """Map workspace dimensions to the security roles used by Odoo and RAG."""
+    workspace = str(workspace_dimension or "").strip().lower()
+    if workspace == "hr":
+        return "hr_manager"
+    if workspace == "it":
+        return "it_staff"
+    return "public"
+
+def parse_markdown_access_matrix(markdown_file="markdown/access_matrix.md"):
+    """Read the markdown access matrix when the Excel matrix is unavailable."""
+    if not os.path.exists(markdown_file):
+        return {}
+
+    matrix_dict = {}
+    with open(markdown_file, "r", encoding="utf-8") as f:
+        for line in f:
+            stripped = line.strip()
+            if not stripped.startswith("|") or "---" in stripped:
+                continue
+
+            columns = [col.strip() for col in stripped.strip("|").split("|")]
+            if len(columns) < 3 or columns[0].lower().startswith("article title"):
+                continue
+
+            title = re.sub(r"^\*\*|\*\*$", "", columns[0]).strip()
+            workspace = columns[1].replace("`", "").split()[0].strip().lower()
+            role = columns[2].replace("`", "").strip().lower()
+            if title:
+                matrix_dict[title] = (workspace, role or get_access_role_for_workspace(workspace))
+
+    return matrix_dict
+
 def load_access_matrix():
     """
-    BƯỚC 1: Đọc Matrix Sheet bằng pandas
-    - Đọc file Excel 'access_matrix.xlsx' chứa bảng phân quyền bảo mật.
-    - Tạo dictionary tra cứu nhanh với key là tiêu đề bài viết (Article Title)
-      và value là tuple (Workspace Dimension, Access Role).
+    Load access rules by article title.
+
+    Prefer access_matrix.xlsx when present. If the spreadsheet is absent, fall
+    back to markdown/access_matrix.md. If neither exists, access_role is derived
+    from each article workspace.
     """
     matrix_file = "access_matrix.xlsx"
     if not os.path.exists(matrix_file):
-        print(f"Lỗi: Không tìm thấy file phân quyền '{matrix_file}'.")
-        sys.exit(1)
+        matrix_dict = parse_markdown_access_matrix()
+        if matrix_dict:
+            print(f"Khong tim thay '{matrix_file}'. Dang dung markdown/access_matrix.md thay the.")
+            print(f"Da tai {len(matrix_dict)} quy tac phan quyen tu Markdown Matrix.")
+            return matrix_dict
+
+        print(f"Canh bao: Khong tim thay '{matrix_file}' hoac markdown/access_matrix.md. Se suy ra role tu workspace_dimension.")
+        return {}
         
-    print(f"Đang đọc Matrix Sheet từ: {matrix_file}...")
+    print(f"Dang doc Matrix Sheet tu: {matrix_file}...")
     df = pd.read_excel(matrix_file)
     
-    # Tạo dictionary tra cứu nhanh
     matrix_dict = {}
     for _, row in df.iterrows():
         title = str(row['Article Title']).strip()
         workspace = str(row['Workspace Dimension']).strip().lower()
         role = str(row['Access Role']).strip().lower()
+        if not role or role == "nan":
+            role = get_access_role_for_workspace(workspace)
         matrix_dict[title] = (workspace, role)
         
-    print(f"Đã tải {len(matrix_dict)} quy tắc phân quyền từ Matrix Sheet.")
+    print(f"Da tai {len(matrix_dict)} quy tac phan quyen tu Matrix Sheet.")
     return matrix_dict
 
 def clean_html(html_content):
@@ -98,7 +142,7 @@ def fetch_articles_from_odoo():
             return None
         
         models = xmlrpc.client.ServerProxy(f'{url}/xmlrpc/2/object')
-        fields_to_read = ['name', 'body_html', 'workspace_dimension', 'tag_ids']
+        fields_to_read = ['name', 'body_html', 'workspace_dimension', 'access_role', 'tag_ids']
         
         articles_data = models.execute_kw(
             DB, uid, PASSWORD,
@@ -133,6 +177,8 @@ def fetch_articles_from_odoo():
             records.append({
                 'title': title,
                 'body_html': body,
+                'workspace_dimension': art.get('workspace_dimension') or 'ops',
+                'access_role': art.get('access_role') or get_access_role_for_workspace(art.get('workspace_dimension')),
                 'tags': tags
             })
         return records
@@ -167,6 +213,8 @@ def fetch_articles_from_excel_template():
         records.append({
             'title': title,
             'body_html': content,
+            'workspace_dimension': 'ops',
+            'access_role': 'public',
             'tags': tags
         })
     return records
@@ -188,8 +236,32 @@ def main():
     if not articles:
         articles = fetch_articles_from_excel_template()
 
-    # No hardcoded test articles appended; relying on FoodHub Excel articles.
-    pass
+    # Thêm các bài viết mẫu để kiểm thử phân quyền bảo mật IT và HR
+    articles.append({
+        'title': "IT Engineer Onboarding Protocol",
+        'body_html': "<h2>IT Engineer Onboarding Protocol</h2><p>Welcome to the Engineering team. Upon arrival, all new IT technical hires must initialize their corporate GitHub profiles and configure their local environments according to the Dev guidelines.</p>",
+        'tags': ["SOP", "Hardware"]
+    })
+    articles.append({
+        'title': "Network Security & System Firewall Policy",
+        'body_html': "<h2>Network Security & System Firewall Policy</h2><p>In the event of system safety infractions, technical staff must trigger the automated port isolation protocol immediately to protect internal corporate data and network logs.</p>",
+        'tags': ["SOP", "Network"]
+    })
+    articles.append({
+        'title': "Employee Resignation and Offboarding SOP",
+        'body_html': "<h2>Employee Resignation and Offboarding SOP</h2><p>Employees resigning from the company must submit notice 30 days in advance and return all corporate laptops, security tokens, and keys to HR before receiving final clearance.</p>",
+        'tags': ["HR", "Offboarding"]
+    })
+    articles.append({
+        'title': "Salary and Payroll Administration Policy",
+        'body_html': "<h2>Salary and Payroll Administration Policy</h2><p>Individual salary details and payroll logs are strictly confidential. Inquiries regarding payroll calculations must be submitted in writing directly to the HR Manager.</p>",
+        'tags': ["HR", "Payroll"]
+    })
+    articles.append({
+        'title': "HR Onboarding Handbook",
+        'body_html': "<h2>HR Onboarding Handbook</h2><p>Welcome to FoodHub! According to HR guidelines, we welcome a new employee by conducting an orientation session on their first day, introducing them to team members, assigning a mentor, setting up their workspace, and completing necessary payroll and contract paperwork.</p>",
+        'tags': ["HR", "Onboarding"]
+    })
 
     # BƯỚC 3: Cấu hình bộ chia nhỏ văn bản (Text Splitter)
     # chunk_size=500 ký tự, chunk_overlap=100 ký tự đệm để không mất bối cảnh
@@ -206,9 +278,26 @@ def main():
         if not clean_text:
             clean_text = title
 
-        # Tra cứu phân quyền từ Matrix Sheet đã nạp ở Bước 1
-        # Nếu bài viết không nằm trong Matrix Sheet, gán mặc định là ops (phòng ban) và public (vai trò truy cập)
-        workspace_dim, access_role = matrix_dict.get(title, ("ops", "public"))
+        # Tra cứu phân quyền từ Matrix Sheet hoặc gán cứng cho các bài viết test bảo mật
+        if title == "IT Engineer Onboarding Protocol":
+            workspace_dim, access_role = "it", "it_staff"
+        elif title == "Network Security & System Firewall Policy":
+            workspace_dim, access_role = "it", "it_staff"
+        elif title == "Employee Resignation and Offboarding SOP":
+            workspace_dim, access_role = "hr", "hr_manager"
+        elif title == "Salary and Payroll Administration Policy":
+            workspace_dim, access_role = "hr", "hr_manager"
+        elif title == "HR Onboarding Handbook":
+            workspace_dim, access_role = "hr", "hr_manager"
+        else:
+            workspace_dim, access_role = matrix_dict.get(
+                title,
+                (
+                    art.get('workspace_dimension', 'ops'),
+                    art.get('access_role') or get_access_role_for_workspace(art.get('workspace_dimension', 'ops'))
+                )
+            )
+            access_role = access_role or get_access_role_for_workspace(workspace_dim)
 
         # BƯỚC 3: Thực hiện chia text thành các chunk nhỏ
         chunks = text_splitter.split_text(clean_text)
@@ -220,7 +309,7 @@ def main():
                 "title": title,
                 "workspace_dimension": workspace_dim,
                 "access_role": access_role,
-                "tags": art['tags']
+                "tags": ", ".join(art['tags']) if art['tags'] else ""
             })
 
     print(f"Đã chia nhỏ văn bản thành {len(chunks_list)} chunks.")
@@ -228,7 +317,10 @@ def main():
     # BƯỚC 5: Khởi tạo HuggingFace Embeddings
     # Mô hình này không dùng OpenAI/Ollama, chạy hoàn toàn offline miễn phí cục bộ.
     print(f"Đang khởi tạo HuggingFace Embeddings (Model: '{EMBEDDING_MODEL}')...")
-    embeddings = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL)
+    embeddings = HuggingFaceEmbeddings(
+        model_name=EMBEDDING_MODEL,
+        model_kwargs={'local_files_only': True}
+    )
 
     # BƯỚC 6: Khởi tạo Chroma DB và lưu persistent (vật lý) xuống đĩa cứng
     # Sử dụng package langchain_chroma theo đúng yêu cầu đề bài.

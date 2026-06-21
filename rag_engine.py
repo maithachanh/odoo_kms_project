@@ -7,6 +7,8 @@ detects fallback scenarios (insufficient data), formats system prompts, and call
 """
 
 import os
+os.environ["HF_HUB_OFFLINE"] = "1"
+os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 
@@ -66,6 +68,11 @@ GREETING_RESPONSE = (
 FALLBACK_RESPONSE = (
     "I could not find sufficient information in the FoodHub knowledge base to answer this question.\n\n"
     "Please consult your supervisor or the appropriate department for further assistance."
+)
+
+NO_PERMISSION_RESPONSE = (
+    "You do not have permission to access this information. "
+    "Please contact an authorized manager or administrator if you need access."
 )
 
 # Standard Guardrail response
@@ -171,6 +178,21 @@ def get_db_filter(user_role):
         # Default to public
         return {"access_role": "public"}
 
+def normalize_role(user_role):
+    role = str(user_role or "public").strip().lower()
+    if role in ("hr_manager", "it_staff", "public"):
+        return role
+    return "public"
+
+def can_access_role(user_role, document_role):
+    role = normalize_role(user_role)
+    doc_role = normalize_role(document_role)
+    if role == "hr_manager":
+        return True
+    if role == "it_staff":
+        return doc_role in ("it_staff", "public")
+    return doc_role == "public"
+
 def get_rag_response(query_string, user_role, top_k=2, temperature=0.2, provider="gemini", api_key=None):
     """
     Main RAG Logic:
@@ -227,7 +249,10 @@ def get_rag_response(query_string, user_role, top_k=2, temperature=0.2, provider
         }
 
     # Load local HuggingFace embeddings
-    embeddings = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL)
+    embeddings = HuggingFaceEmbeddings(
+        model_name=EMBEDDING_MODEL,
+        model_kwargs={'local_files_only': True}
+    )
     db = Chroma(
         persist_directory=PERSIST_DIR, 
         embedding_function=embeddings,
@@ -236,25 +261,73 @@ def get_rag_response(query_string, user_role, top_k=2, temperature=0.2, provider
 
     # 2. Retrieve documents using security metadata filter
     db_filter = get_db_filter(user_role)
+    distance_threshold = 1.25
+
+    try:
+        unfiltered_docs_with_scores = db.similarity_search_with_score(
+            query_string,
+            k=max(top_k, 4)
+        )
+    except Exception as e:
+        print(f"[VECTOR DB ERROR] {e}")
+        return {
+            "answer": (
+                "The vector database could not complete this search. "
+                "Please rebuild the KMS vector database and restart the RAG API server."
+            ),
+            "sources": [],
+            "fallback_triggered": True,
+            "guardrail_triggered": False,
+            "permission_denied": False
+        }
+
+    if unfiltered_docs_with_scores:
+        best_unfiltered_doc, best_unfiltered_score = unfiltered_docs_with_scores[0]
+        best_doc_role = best_unfiltered_doc.metadata.get("access_role", "public")
+        if best_unfiltered_score <= distance_threshold and not can_access_role(user_role, best_doc_role):
+            print(
+                "[PERMISSION DENIED] "
+                f"Role '{normalize_role(user_role)}' cannot access document role '{best_doc_role}' "
+                f"for query: '{query_string}'"
+            )
+            return {
+                "answer": NO_PERMISSION_RESPONSE,
+                "sources": [],
+                "fallback_triggered": True,
+                "guardrail_triggered": False,
+                "permission_denied": True
+            }
     
     # Retrieve docs with similarity scores (returns List[Tuple[Document, float]])
     # Chroma returns squared L2 distance (lower = better)
-    docs_with_scores = db.similarity_search_with_score(
-        query_string, 
-        k=top_k, 
-        filter=db_filter
-    )
+    try:
+        docs_with_scores = db.similarity_search_with_score(
+            query_string,
+            k=top_k,
+            filter=db_filter
+        )
+    except Exception as e:
+        print(f"[VECTOR DB ERROR] {e}")
+        return {
+            "answer": (
+                "The vector database could not complete this search. "
+                "Please rebuild the KMS vector database and restart the RAG API server."
+            ),
+            "sources": [],
+            "fallback_triggered": True,
+            "guardrail_triggered": False,
+            "permission_denied": False
+        }
 
     # 3. Fallback thresholding checks
     # Trigger fallback if no docs returned or if the best score is too high (L2 distance > 1.25 for normalized HF embeddings)
-    distance_threshold = 1.25
-    
     if not docs_with_scores:
         return {
             "answer": FALLBACK_RESPONSE,
             "sources": [],
             "fallback_triggered": True,
-            "guardrail_triggered": False
+            "guardrail_triggered": False,
+            "permission_denied": False
         }
         
     best_doc, best_score = docs_with_scores[0]
@@ -265,7 +338,8 @@ def get_rag_response(query_string, user_role, top_k=2, temperature=0.2, provider
             "answer": "The retrieved information does not appear relevant to your question. Please try rephrasing your request or consult the appropriate department.",
             "sources": [],
             "fallback_triggered": True,
-            "guardrail_triggered": False
+            "guardrail_triggered": False,
+            "permission_denied": False
         }
 
     # Extract clean text and source titles from retrieved docs

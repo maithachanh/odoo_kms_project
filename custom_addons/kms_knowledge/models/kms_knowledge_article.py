@@ -40,6 +40,12 @@ class KmsKnowledgeArticle(models.Model):
         ('legal', 'Legal')
     ], string='Workspace Dimension', default='ops', required=True)
 
+    access_role = fields.Selection([
+        ('public', 'Public'),
+        ('it_staff', 'IT Staff'),
+        ('hr_manager', 'HR Manager')
+    ], string='Access Role', compute='_compute_access_role', store=True, readonly=True)
+
     sequence = fields.Integer(string='Sequence', default=10)
     is_favorite = fields.Boolean(string='Favorite', default=False)
     author_id = fields.Many2one(
@@ -74,6 +80,16 @@ class KmsKnowledgeArticle(models.Model):
                 current = current.parent_id
             record.breadcrumb_path = " / ".join(reversed(names)) if names else ""
 
+    @api.depends('workspace_dimension')
+    def _compute_access_role(self):
+        for record in self:
+            if record.workspace_dimension == 'hr':
+                record.access_role = 'hr_manager'
+            elif record.workspace_dimension == 'it':
+                record.access_role = 'it_staff'
+            else:
+                record.access_role = 'public'
+
 
 class KmsAiAgent(models.Model):
     _name = 'kms.ai.agent'
@@ -99,9 +115,10 @@ class KmsAiAgent(models.Model):
         
         # Determine current user's access role
         user_role = 'public'
-        # Simple role mapping based on groups
-        if self.env.user.has_group('base.group_system'):
+        if self.env.user.has_group('kms_knowledge.group_kms_hr_manager') or self.env.user.has_group('base.group_system'):
             user_role = 'hr_manager'
+        elif self.env.user.has_group('kms_knowledge.group_kms_it_staff'):
+            user_role = 'it_staff'
         
         # RAG API runs on host machine port 8000
         # From Docker container, host.docker.internal resolves to the host machine
@@ -120,7 +137,9 @@ class KmsAiAgent(models.Model):
                 sources = ", ".join(sources_list) if sources_list else "No source"
                 
                 # Check if guardrail or fallback triggered
-                if res_data.get("guardrail_triggered"):
+                if res_data.get("permission_denied"):
+                    sources = "NO PERMISSION"
+                elif res_data.get("guardrail_triggered"):
                     sources = "🚨 GUARDRAIL BLOCKED"
                 elif res_data.get("fallback_triggered"):
                     sources = "⚠️ FALLBACK ACTIVATED"

@@ -24,6 +24,12 @@ According to corporate data security guidelines:
 | **Troubleshooting** | `ops` (General) | `public` | `["fix issues", "error support", "ops help"]` | Resolving common operational blockages for customer support agents. |
 | **Customer Complaint Handling** | `sales` (General) | `public` | `["complaint support", "customer feedback", "sales ops"]` | Standard procedures for dealing with unhappy clients and processing returns. |
 | **VIP Customer Privileges** | `sales` (General) | `public` | `["vip benefits", "discount policy", "loyalty program"]` | Guide on handling high-net-worth client accounts and applying custom discounts. |
+| **Poor Payment History Customer** | `sales` (General) | `public` | `["bad credit", "poor payment history", "delayed payment"]` | Handling rules for customers with poor credit history. |
+| **POS Pricing Fixes** | `sales` (General) | `public` | `["pos override", "pricing error", "incorrect price"]` | POS manual price override and error handling. |
+| **Recommended Time for Purchasing** | `purchase` (General) | `public` | `["inventory purchase time", "procurement timing", "stock refill"]` | Best procurement window at start of month. |
+| **Avoid Purchasing at Unusually Low Prices** | `purchase` (General) | `public` | `["cheap stock warning", "unusually low prices", "supplier check"]` | Quality risk management for cheap ingredients. |
+| **Preventing Missing or Incorrect Item Deliveries** | `helpdesk` (General) | `public` | `["prevent delivery errors", "incorrect order", "missing items"]` | Verification checklists for order bags and drivers. |
+| **POS System Troubleshooting Guide** | `technical` (General) | `public` | `["pos frozen", "reboot cash register", "it support pos"]` | Check cables, soft reboot, switch to manual books. |
 
 ---
 
