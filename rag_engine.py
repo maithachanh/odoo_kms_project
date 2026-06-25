@@ -11,6 +11,7 @@ os.environ["HF_HUB_OFFLINE"] = "1"
 os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
+from odoo_agent_utils import detect_intents, fetch_live_po_so_summary, search_odoo_records
 
 # Imports for LangChain & Vector Store
 from langchain_chroma import Chroma
@@ -106,12 +107,18 @@ Your goal is to help employees find information quickly while ensuring consisten
 
 ---
 KNOWLEDGE BOUNDARIES:
-- Use only information from the retrieved documents.
-- Answer based on documented FoodHub knowledge.
+- Use only information from the retrieved documents and live Odoo data if provided in the context.
+- Answer based on documented FoodHub knowledge and live Odoo statistics.
 - Clearly identify limitations when information is unavailable.
 - Prioritize accuracy over completeness.
 - Do NOT invent company policies, guess missing information, create new operational procedures, assume restaurant rules that are not documented, make up HR policies or employee benefits, fabricate food safety requirements, or use external knowledge as if it were FoodHub policy.
-- If information is not found in the retrieved documents, clearly state that the information is unavailable.
+- If information is not found in the retrieved documents or live Odoo data, clearly state that the information is unavailable.
+
+---
+LIVE ODOO DATA HANDLING RULES:
+- If the context contains '--- LIVE ODOO TRANSACTIONAL DATA ---', use the numbers and calculations (total sum, average, count, difference) presented there to answer calculation questions. Answer in Vietnamese, clearly presenting the sums, averages, or counts.
+- If the context contains '--- LIVE ODOO SEARCH RESULTS ---', present the matching products or orders and their Odoo links exactly as provided in the context (formatted as markdown links `[Name/Code](URL)` or `[Đơn hàng X](URL)`). Do not modify the URLs. Mention that these are live links to access the records in Odoo.
+- When referencing Odoo live data, cite the source as 'Odoo Live Database'.
 
 ---
 CONFIDENCE-BASED RESPONSE LOGIC & FALLBACK RULES:
@@ -240,6 +247,21 @@ def get_rag_response(query_string, user_role, top_k=2, temperature=0.2, provider
             "guardrail_triggered": True
         }
 
+    # 1.5. Detect Odoo Live Data Intents
+    is_calc, is_search, keywords = detect_intents(query_string)
+    odoo_context = ""
+    is_odoo_triggered = False
+    
+    if is_calc:
+        print(f"[ODOO AGENT] Calculation intent detected for query: '{query_string}'")
+        odoo_context = fetch_live_po_so_summary()
+        is_odoo_triggered = True
+    elif is_search and keywords:
+        print(f"[ODOO AGENT] Search intent detected for keywords {keywords} in query: '{query_string}'")
+        odoo_context = search_odoo_records(keywords)
+        if odoo_context:
+            is_odoo_triggered = True
+
     # Load persistent vector database
     if not os.path.exists(PERSIST_DIR):
         return {
@@ -322,30 +344,43 @@ def get_rag_response(query_string, user_role, top_k=2, temperature=0.2, provider
     # 3. Fallback thresholding checks
     # Trigger fallback if no docs returned or if the best score is too high (L2 distance > 1.25 for normalized HF embeddings)
     if not docs_with_scores:
-        return {
-            "answer": FALLBACK_RESPONSE,
-            "sources": [],
-            "fallback_triggered": True,
-            "guardrail_triggered": False,
-            "permission_denied": False
-        }
+        if not is_odoo_triggered:
+            return {
+                "answer": FALLBACK_RESPONSE,
+                "sources": [],
+                "fallback_triggered": True,
+                "guardrail_triggered": False,
+                "permission_denied": False
+            }
+        else:
+            docs_with_scores = []
         
-    best_doc, best_score = docs_with_scores[0]
-    # L2 distance check for relevance
-    if best_score > distance_threshold:
-        print(f"[FALLBACK TRIGGERED] Best distance score is {best_score:.4f} (Threshold: {distance_threshold})")
-        return {
-            "answer": "The retrieved information does not appear relevant to your question. Please try rephrasing your request or consult the appropriate department.",
-            "sources": [],
-            "fallback_triggered": True,
-            "guardrail_triggered": False,
-            "permission_denied": False
-        }
+    if docs_with_scores:
+        best_doc, best_score = docs_with_scores[0]
+        # L2 distance check for relevance
+        if best_score > distance_threshold and not is_odoo_triggered:
+            print(f"[FALLBACK TRIGGERED] Best distance score is {best_score:.4f} (Threshold: {distance_threshold})")
+            return {
+                "answer": "The retrieved information does not appear relevant to your question. Please try rephrasing your request or consult the appropriate department.",
+                "sources": [],
+                "fallback_triggered": True,
+                "guardrail_triggered": False,
+                "permission_denied": False
+            }
 
     # Extract clean text and source titles from retrieved docs
     context_chunks = []
     sources = []
+    
+    # Add Odoo live data if available
+    if odoo_context:
+        context_chunks.append(odoo_context)
+        sources.append("Odoo Live Database")
+        
     for doc, score in docs_with_scores:
+        # If score is too high but we had Odoo data, we bypass fallback but skip the irrelevant document itself
+        if score > distance_threshold and is_odoo_triggered:
+            continue
         title = doc.metadata.get("title", "Untitled Document")
         context_chunks.append(f"--- SOURCE: {title} ---\n{doc.page_content}")
         if title not in sources:
