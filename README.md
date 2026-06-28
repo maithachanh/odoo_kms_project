@@ -62,43 +62,42 @@ This project integrates a **custom KMS Knowledge module** in Odoo 19 with a loca
 
 ## 🛠️ 1. Installation & Setup Instructions
 
-### Prerequisites
-1. Install **Docker Desktop**.
-2. Install **Ollama** and pull the embedding model:
-   ```bash
-   ollama pull nomic-embed-text
-   ```
-3. Set up Python environment & install dependencies:
+The entire stack is containerized, including PostgreSQL, Odoo Web Client, the RAG API Server, and the Ollama LLM engine.
+
+### Step 1: Spin Up the Entire Docker Stack
+Bring up all services in the background:
+```bash
+docker-compose up -d --build
+```
+This launches:
+- **Odoo Web Client**: `http://localhost:8069` (login: `admin` / `admin`)
+- **PostgreSQL**: Port `5433` on Host
+- **RAG API Server**: Port `8000` on Host (Service name: `rag-api`)
+- **Ollama Engine**: Port `11434` on Host (Service name: `ollama`)
+
+### Step 2: Pull the LLM Model inside Ollama Container
+Execute the pull command inside the container to download and cache the `phi3` model (persisted in the `ollama-data` volume):
+```bash
+docker exec -it odoo19-ollama ollama run phi3
+```
+
+### Step 3: Build the Vector Database (Local/Optional)
+If you want to ingest the knowledge articles into ChromaDB:
+1. Ensure dependencies are installed locally (for running scripts on the host):
    ```bash
    pip install -r requirements.txt
    ```
+2. Build the vector database:
+   ```bash
+   python ingest_to_vector.py
+   ```
+3. To verify vector DB search and security role isolation:
+   ```bash
+   python test_vector_db.py
+   ```
 
-### Step 1: Spin Up Docker Services
-Bring up Odoo and PostgreSQL containers in the background:
-```bash
-docker-compose up -d
-```
-- **Odoo Web**: `http://localhost:8069` (login: `admin` / `admin`)
-- **PostgreSQL**: Port `5433` on Host
-
-### Step 2: Build the Vector Database
-Ingest articles (extracted from Odoo or fallback Excel templates) into ChromaDB:
-```bash
-python ingest_to_vector.py
-```
-To verify the database integrity, semantic accuracy, and security role isolation:
-```bash
-python test_vector_db.py
-```
-
-### Step 3: Run the Host RAG API Server
-Start the HTTP REST server to bridge Odoo with the host embedding/LLM models:
-```bash
-python rag_api.py
-```
-
-### Step 4: Upgrade the Odoo Custom Module
-Trigger Odoo to load the new views, permissions, and bootstrap records:
+### Step 4: Upgrade Odoo Custom Module
+Upgrade the `kms_knowledge` module to load the OWL UI components, QWeb website layouts, and system configurations:
 ```bash
 docker exec -i odoo19-web odoo -d odoo_kms -u kms_knowledge --stop-after-init
 docker restart odoo19-web
@@ -120,6 +119,17 @@ The RAG Engine (`rag_engine.py`) enforces strict enterprise constraints:
 ---
 
 ## 🖥️ 3. Odoo User Interface & Interactions
+
+### 💬 Floating Ask AI Chatbot (Backend & Website Frontend)
+A floating interactive "Ask AI" assistant widget is available on both Odoo interfaces:
+1. **Odoo Backend**: Accessible via a stylized **AI** badge in the top right systray menu. Clicking it toggles the chat window on any backend page.
+2. **Website Frontend**: A floating **AI** action button is positioned at the bottom-right corner of the website homepage, providing quick customer-facing answers.
+
+**Features**:
+*   **Quick Suggestions**: Clickable prompt pills like *"Summarize what the last tickets complain about"* or *"Bar chart of top-selling products"*.
+*   **Security Filters**: Automatically maps user login sessions to security levels (`hr_manager`, `it_staff`, `public`).
+*   **Source Citations**: Displays document source references at the bottom of each answer.
+*   **System Parameter Configuration**: You can change the target RAG API URL directly from **Settings -> Technical -> Parameters -> System Parameters** by editing the key `kms.rag_api_url` (defaults to `http://rag-api:8000` inside Docker).
 
 ### AI Agent Kanban Dashboard
 Navigate to **KMS Knowledge $\rightarrow$ AI Chatbot**. You will see three cards bootstrapped natively:

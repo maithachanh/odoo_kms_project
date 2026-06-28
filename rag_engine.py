@@ -7,7 +7,8 @@ detects fallback scenarios (insufficient data), formats system prompts, and call
 """
 
 import os
-os.environ["HF_HUB_OFFLINE"] = "1"
+if os.getenv("HF_HUB_OFFLINE", "0") == "1":
+    os.environ["HF_HUB_OFFLINE"] = "1"
 os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
@@ -270,10 +271,10 @@ def get_rag_response(query_string, user_role, top_k=2, temperature=0.2, provider
             "fallback_triggered": True
         }
 
-    # Load local HuggingFace embeddings
+    local_only = os.getenv("HF_HUB_OFFLINE", "0") == "1"
     embeddings = HuggingFaceEmbeddings(
         model_name=EMBEDDING_MODEL,
-        model_kwargs={'local_files_only': True}
+        model_kwargs={'local_files_only': local_only}
     )
     db = Chroma(
         persist_directory=PERSIST_DIR, 
@@ -435,13 +436,35 @@ def get_rag_response(query_string, user_role, top_k=2, temperature=0.2, provider
             response = llm.invoke(prompt)
             answer = response.content
         elif provider == "ollama":
-            from langchain_ollama import ChatOllama
-            llm = ChatOllama(
-                model="phi3",
-                temperature=temperature
-            )
-            response = llm.invoke(prompt)
-            answer = response.content
+            base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+            try:
+                from langchain_ollama import ChatOllama
+                llm = ChatOllama(
+                    model="phi3",
+                    temperature=temperature,
+                    base_url=base_url
+                )
+                response = llm.invoke(prompt)
+                answer = response.content
+            except Exception as le:
+                print(f"[OLLAMA] LangChain wrapper failed ({le}), falling back to direct HTTP API.")
+                import requests
+                url = f"{base_url}/api/chat"
+                payload = {
+                    "model": "phi3",
+                    "messages": [
+                        {"role": "user", "content": prompt}
+                    ],
+                    "stream": False,
+                    "options": {
+                        "temperature": temperature
+                    }
+                }
+                res = requests.post(url, json=payload, timeout=300)
+                if res.status_code == 200:
+                    answer = res.json()["message"]["content"]
+                else:
+                    raise Exception(f"Ollama Direct API returned status {res.status_code}: {res.text}")
         else:
             return {
                 "answer": "Error: Unsupported LLM provider.",

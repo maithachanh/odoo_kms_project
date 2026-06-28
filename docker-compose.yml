@@ -20,6 +20,7 @@ services:
     container_name: odoo19-web
     depends_on:
       - db
+      - rag-api
     ports:
       - "8069:8069"
     environment:
@@ -32,3 +33,47 @@ services:
       - ./odoo-patches/translate.py:/usr/lib/python3/dist-packages/odoo/tools/translate.py:ro
       - ./custom_addons:/mnt/extra-addons
     restart: always
+
+  rag-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.rag
+    container_name: odoo19-rag-api
+    depends_on:
+      - ollama
+    ports:
+      - "8000:8000"
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - PERSIST_DIRECTORY=/app/chroma_db
+      - COLLECTION_NAME=kms_collection
+      - EMBEDDING_MODEL_NAME=sentence-transformers/all-MiniLM-L6-v2
+      - HF_HUB_OFFLINE=1
+      - GEMINI_API_KEY
+      - OPENAI_API_KEY
+    volumes:
+      - ./chroma_db:/app/chroma_db
+      - ./huggingface_cache/huggingface:/root/.cache/huggingface
+      - .env:/app/.env
+    restart: always
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: odoo19-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    # If you have an NVIDIA GPU and NVIDIA Container Toolkit installed,
+    # you can uncomment the following section to enable GPU acceleration:
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+    restart: always
+
+volumes:
+  ollama-data:

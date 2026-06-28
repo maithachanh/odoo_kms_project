@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="kms_knowledge.AskAiChatbot">
+        <div class="o_kms_ask_ai_chatbot d-flex flex-column shadow-lg" t-att-class="{'minimized': state.isMinimized}">
+            <!-- Header -->
+            <div class="o_kms_chatbot_header d-flex justify-content-between align-items-center px-3 py-2 text-white">
+                <div class="d-flex align-items-center">
+                    <span class="o_kms_ai_avatar me-2">AI</span>
+                    <strong class="text-white">Ask AI</strong>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm text-white p-0 border-0 bg-transparent" t-on-click="toggleMinimize">
+                        <i class="fa" t-att-class="state.isMinimized ? 'fa-window-maximize' : 'fa-minus'"/>
+                    </button>
+                    <button class="btn btn-sm text-white p-0 border-0 bg-transparent" t-on-click="props.onClose">
+                        <i class="fa fa-times"/>
+                    </button>
+                </div>
+            </div>
+            
+            <t t-if="!state.isMinimized">
+                <!-- Chat Body -->
+                <div class="o_kms_chatbot_body p-3 flex-grow-1 overflow-auto d-flex flex-column gap-3" t-ref="chatBody">
+                    <t t-foreach="state.messages" t-as="msg" t-key="msg.id">
+                        <div class="o_kms_msg_wrapper d-flex" t-att-class="msg.role === 'user' ? 'justify-content-end' : 'justify-content-start'">
+                            <div class="o_kms_msg_bubble p-2.5 rounded-3 max-w-85" t-att-class="msg.role === 'user' ? 'bg-primary text-white user-msg' : 'bg-light text-dark assistant-msg'">
+                                <div class="o_kms_msg_content small" style="white-space: pre-wrap; line-height: 1.4;"><t t-esc="msg.content"/></div>
+                                <t t-if="msg.sources">
+                                    <div class="o_kms_msg_sources mt-1 text-muted" style="font-size: 0.75em; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 2px;">
+                                        <t t-esc="msg.sources"/>
+                                    </div>
+                                </t>
+                            </div>
+                        </div>
+                    </t>
+                    
+                    <!-- Typing Indicator -->
+                    <t t-if="state.isTyping">
+                        <div class="o_kms_msg_wrapper d-flex justify-content-start">
+                            <div class="o_kms_msg_bubble bg-light text-dark p-2.5 rounded-3 small assistant-msg">
+                                <span class="o_kms_typing_dots">AI is thinking<span>.</span><span>.</span><span>.</span></span>
+                            </div>
+                        </div>
+                    </t>
+                </div>
+                
+                <!-- Suggestions -->
+                <div class="o_kms_chatbot_suggestions px-3 py-2 border-top d-flex flex-column gap-1">
+                    <t t-foreach="state.suggestions" t-as="sug" t-key="sug">
+                        <button class="btn btn-outline-secondary btn-sm text-start py-1 px-3 border-0 bg-transparent rounded o_kms_sug_pill text-truncate" t-on-click="() => sendMessage(sug)">
+                            <t t-esc="sug"/>
+                        </button>
+                    </t>
+                </div>
+                
+                <!-- Input Area -->
+                <div class="o_kms_chatbot_input px-3 py-2.5 border-top d-flex gap-2 align-items-center">
+                    <input type="text" class="form-control form-control-sm border-0 flex-grow-1" placeholder="Message Ask AI..." t-model="state.inputValue" t-on-keypress="onKeyPress"/>
+                    <button class="btn btn-primary btn-sm p-1 d-flex align-items-center justify-content-center rounded-circle" style="width: 28px; height: 28px; background-color: #6366f1; border-color: #6366f1;" t-on-click="() => sendMessage(state.inputValue)">
+                        <i class="fa fa-paper-plane text-white" style="font-size: 0.85em;"/>
+                    </button>
+                </div>
+            </t>
+        </div>
+    </t>
+</templates>

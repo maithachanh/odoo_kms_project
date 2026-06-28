@@ -122,7 +122,8 @@ class KmsAiAgent(models.Model):
         
         # RAG API runs on host machine port 8000
         # From Docker container, host.docker.internal resolves to the host machine
-        url = "http://host.docker.internal:8000/query"
+        rag_url = self.env['ir.config_parameter'].sudo().get_param('kms.rag_api_url', 'http://rag-api:8000')
+        url = f"{rag_url}/query"
         payload = {
             "query": self.user_query,
             "role": user_role,
@@ -161,11 +162,11 @@ class KmsAiAgent(models.Model):
                 raise UserError(f"API Server error: {response.text}")
         except requests.exceptions.ConnectionError:
             raise UserError(
-                "Cannot connect to RAG API Server at http://host.docker.internal:8000.\n\n"
+                f"Cannot connect to RAG API Server at {url}.\n\n"
                 "Please ensure:\n"
-                "1. The RAG API server is running on the host machine: python rag_api.py\n"
-                "2. Ollama is running: ollama serve\n"
-                "3. The llama3 model is downloaded: ollama pull llama3"
+                "1. The RAG API server is running in Docker: odoo19-rag-api\n"
+                "2. Ollama is running in Docker: odoo19-ollama\n"
+                "3. The phi3 model is downloaded: docker exec -it odoo19-ollama ollama run phi3"
             )
         except Exception as e:
             raise UserError(f"Error connecting to RAG API Server: {e}")
@@ -179,7 +180,8 @@ class KmsAiAgent(models.Model):
         import base64
         from odoo.exceptions import UserError
         
-        url = "http://host.docker.internal:8000/synthesize"
+        rag_url = self.env['ir.config_parameter'].sudo().get_param('kms.rag_api_url', 'http://rag-api:8000')
+        url = f"{rag_url}/synthesize"
         payload = {
             "agent_id": self.id,
             "provider": "ollama"  # Use Ollama for offline synthesis
@@ -211,8 +213,8 @@ class KmsAiAgent(models.Model):
                 raise UserError(f"API Server error: {response.text}")
         except requests.exceptions.ConnectionError:
             raise UserError(
-                "Cannot connect to RAG API Server at http://host.docker.internal:8000.\n\n"
-                "Please ensure the RAG API server is running: python rag_api.py"
+                f"Cannot connect to RAG API Server at {url}.\n\n"
+                "Please ensure the RAG API server is running in Docker: odoo19-rag-api"
             )
         except Exception as e:
             raise UserError(f"Error connecting to RAG API Server: {e}")

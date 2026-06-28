@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="kms_knowledge.AskAiSystray">
+        <div class="o_kms_ask_ai_systray_item position-relative d-flex align-items-center" style="padding: 0 10px; height: 100%;">
+            <a href="#" class="o_kms_ask_ai_icon d-flex align-items-center justify-content-center text-decoration-none" t-on-click.prevent="toggleChat" title="Ask AI Assistant" style="height: 100%;">
+                <span class="o_kms_systray_badge px-2 py-0.5 rounded-pill text-white small" style="background: linear-gradient(135deg, #f59e0b, #ec4899, #8b5cf6); font-weight: bold; font-size: 0.85em; cursor: pointer;">AI</span>
+            </a>
+            <t t-if="state.isOpen">
+                <AskAiChatbot onClose="toggleChat" />
+            </t>
+        </div>
+    </t>
+</templates>

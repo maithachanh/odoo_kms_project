@@ -1,0 +1,28 @@
+FROM python:3.10-slim
+
+# Install system dependencies needed for compiling some python packages (e.g. ChromaDB/hnswlib)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy dependencies list and install
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy source code files
+COPY rag_api.py .
+COPY rag_engine.py .
+COPY ingest_to_vector.py .
+COPY odoo_agent_utils.py .
+
+# Copy environment template if .env does not exist during compose build
+# (Compose will mount the actual .env, but this keeps the image robust)
+COPY .env.example .env
+
+EXPOSE 8000
+
+# Start RAG API server
+CMD ["python", "rag_api.py"]
