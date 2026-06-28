@@ -344,5 +344,17 @@
                   parent="menu_kms_knowledge_root"
                   action="action_kms_knowledge_chatbot_window"
                   sequence="20"/>
+
+        <menuitem id="menu_kms_knowledge_purchase"
+                  name="Purchase Orders"
+                  parent="menu_kms_knowledge_root"
+                  action="purchase.purchase_form_action"
+                  sequence="30"/>
+
+        <menuitem id="menu_kms_knowledge_products"
+                  name="Products"
+                  parent="menu_kms_knowledge_root"
+                  action="sale.product_template_action"
+                  sequence="40"/>
     </data>
 </odoo>

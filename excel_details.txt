@@ -1,0 +1,81 @@
+=== File: C:\Users\nhan\Downloads\Purchase Order (purchase.order) (1).xlsx ===
+Columns: ['Priority', 'Order Reference', 'Vendor', 'Buyer', 'Order Deadline', 'Activities', 'Total', 'Status']
+Data:
+  Priority Order Reference         Vendor          Buyer      Order Deadline  Activities  Total Status
+0   Normal          P00002  Administrator  Administrator 2026-06-28 14:45:51         NaN      0    RFQ
+1   Normal          P00001  Administrator  Administrator 2026-06-28 14:45:38         NaN      0    RFQ
+
+=== File: C:\Users\nhan\Downloads\Purchase Order (purchase.order).xlsx ===
+Columns: ['Order Reference', 'Vendor', 'Order Deadline', 'Status', 'Product', 'Order Lines/Quantity', 'Order Lines/Unit Price']
+Data:
+   Order Reference                                       Vendor      Order Deadline          Status                 Product  Order Lines/Quantity  Order Lines/Unit Price
+0           P00028                                Lê Thành Nhân 2026-04-10 19:00:00             RFQ               Americano                559871                   45000
+1           P00027  Beverage Hub Distribution, Nguyen Minh Long 2026-04-10 19:00:00             RFQ           Cheese Burger                   230                   45000
+2           P00026                      GreenFarm Fresh Produce 2026-04-10 19:00:00             RFQ                Broccoli                  4000                   45000
+3           P00025                     VietMeat Food Supply JSC 2026-04-09 13:37:35  Purchase Order         Beef Tenderloin                   100                   55000
+4           P00024     VietMeat Food Supply JSC, Tran Duc Phong 2026-04-09 13:36:15  Purchase Order              Beef Slice                   100                   50000
+5           P00023                HappyEgg Farm, Dang Thi Huong 2026-04-09 19:00:00  Purchase Order              Beef Slice                   100                   50000
+6           P00022             EcoPack Solutions, Tran Anh Tuan 2026-04-09 13:19:49  Purchase Order                    Eggs                 10000                   15000
+7           P00021             EcoPack Solutions, Tran Anh Tuan 2026-04-02 15:36:23  Purchase Order   Cheesy Gordita Crunch                     1                   70000
+8           P00020             EcoPack Solutions, Tran Anh Tuan 2026-04-02 15:35:44  Purchase Order               Americano                    12                  540000
+9           P00019             EcoPack Solutions, Tran Anh Tuan 2026-04-02 15:34:55  Purchase Order   Cheesy Gordita Crunch                    10                   70000
+10          P00018             EcoPack Solutions, Tran Anh Tuan 2026-04-02 15:33:52  Purchase Order   Cheesy Gordita Crunch                   100                   70000
+11          P00017                     VietMeat Food Supply JSC 2026-04-02 15:34:02  Purchase Order    Fresh Chicken Breast                     1                       0
+12             NaN                                          NaN                 NaT             NaN                     NaN                     1                       0
+13             NaN                                          NaN                 NaT             NaN                     NaN                     1                       0
+14             NaN                                          NaN                 NaT             NaN                     NaN                     1                       0
+15             NaN                                          NaN                 NaT             NaN                     NaN                     1                       0
+16             NaN                                          NaN                 NaT             NaN                     NaN                     1                       0
+17             NaN                                          NaN                 NaT             NaN                     NaN                     1                       0
+18             NaN                                          NaN                 NaT             NaN                     NaN                     1                       0
+19          P00016             EcoPack Solutions, Tran Anh Tuan 2026-04-02 15:32:58  Purchase Order   Cheesy Gordita Crunch                  1000                   70000
+20          P00015                                HappyEgg Farm 2026-04-02 15:32:41  Purchase Order                    Eggs                   100                    1000
+21          P00014                                Anh Mai Thạch 2026-04-02 15:31:56  Purchase Order   Cheesy Gordita Crunch                   100                   70000
+22          P00013             EcoPack Solutions, Tran Anh Tuan 2026-04-02 15:28:28  Purchase Order   Cheesy Gordita Crunch                   100                   70000
+23             NaN                                          NaN                 NaT             NaN                     NaN                   100                   70000
+24             NaN                                          NaN                 NaT             NaN                     NaN                  1000                  540000
+25             NaN                                          NaN                 NaT             NaN                     NaN                   120                   70000
+26             NaN                                          NaN                 NaT             NaN                     NaN                   120                  500000
+27          P00012     GreenFarm Fresh Produce, Nguyen Van Hiep 2026-04-02 15:30:03  Purchase Order            Fresh Carrot                   200                   30000
+28          P00011             EcoPack Solutions, Tran Anh Tuan 2026-04-02 15:27:53  Purchase Order                Broccoli                   120                   50000
+29          P00010             EcoPack Solutions, Tran Anh Tuan 2026-04-02 15:25:38  Purchase Order                   Salad                   250                  120000
+30          P00009                      GreenFarm Fresh Produce 2026-04-02 15:25:49  Purchase Order                Broccoli                    40                   45000
+31             NaN                                          NaN                 NaT             NaN                     NaN                    60                   22000
+32             NaN                                          NaN                 NaT             NaN                     NaN                    35                   38000
+33             NaN                                          NaN                 NaT             NaN                     NaN                    80                   18000
+34             NaN                                          NaN                 NaT             NaN                     NaN                    25                   65000
+35             NaN                                          NaN                 NaT             NaN                     NaN                    70                   28000
+36             NaN                                          NaN                 NaT             NaN                     NaN                    50                   20000
+37             NaN                                          NaN                 NaT             NaN                     NaN                    90                   25000
+38             NaN                                          NaN                 NaT             NaN                     NaN                    15                   55000
+39             NaN                                          NaN                 NaT             NaN                     NaN                    30                   30000
+40          P00008             EcoPack Solutions, Tran Anh Tuan 2026-04-02 15:18:29  Purchase Order   Cheesy Gordita Crunch                  1000                   70000
+41          P00007                      GreenFarm Fresh Produce 2026-04-02 15:15:00  Purchase Order                Broccoli                    40                   45000
+42             NaN                                          NaN                 NaT             NaN                     NaN                    60                   22000
+43             NaN                                          NaN                 NaT             NaN                     NaN                    35                   38000
+44             NaN                                          NaN                 NaT             NaN                     NaN                    80                   18000
+45             NaN                                          NaN                 NaT             NaN                     NaN                    25                   65000
+46             NaN                                          NaN                 NaT             NaN                     NaN                    70                   28000
+47             NaN                                          NaN                 NaT             NaN                     NaN                    50                   20000
+48             NaN                                          NaN                 NaT             NaN                     NaN                    90                   25000
+49             NaN                                          NaN                 NaT             NaN                     NaN                    15                   55000
+50             NaN                                          NaN                 NaT             NaN                     NaN                    30                   30000
+51          P00006             EcoPack Solutions, Tran Anh Tuan 2026-04-02 15:13:05  Purchase Order               Hamburger                    20                   35000
+52          P00005                            EcoPack Solutions 2026-04-02 15:06:41  Purchase Order  Kraft Paper Food Box S                  3000                    1200
+53             NaN                                          NaN                 NaT             NaN                     NaN                  2000                    1800
+54             NaN                                          NaN                 NaT             NaN                     NaN                  3000                     900
+55             NaN                                          NaN                 NaT             NaN                     NaN                  3000                     400
+56             NaN                                          NaN                 NaT             NaN                     NaN                  4000                     150
+57             NaN                                          NaN                 NaT             NaN                     NaN                  1500                    2200
+58             NaN                                          NaN                 NaT             NaN                     NaN                  1500                    2800
+59          P00004             EcoPack Solutions, Tran Anh Tuan 2026-04-02 14:53:48  Purchase Order  Kraft Paper Food Box S                   100                    1200
+60             NaN                                          NaN                 NaT             NaN                     NaN                   100                    1800
+61             NaN                                          NaN                 NaT             NaN                     NaN                   100                     900
+62             NaN                                          NaN                 NaT             NaN                     NaN                   100                     400
+63             NaN                                          NaN                 NaT             NaN                     NaN                   100                    2200
+64             NaN                                          NaN                 NaT             NaN                     NaN                   100                    2800
+65             NaN                                          NaN                 NaT             NaN                     NaN                   100                     150
+66          P00003                                Lê Thành Nhân 2026-04-02 14:53:52  Purchase Order               Americano                   500                   45000
+67             NaN                                          NaN                 NaT             NaN                     NaN                   500                   20000
+68          P00002             EcoPack Solutions, Tran Anh Tuan 2026-04-02 14:39:34  Purchase Order         Chicken Nuggets                    15                10000000
+

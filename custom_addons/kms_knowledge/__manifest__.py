@@ -12,7 +12,7 @@ and metadata-tagging capabilities.
     """,
     'category': 'Knowledge Management',
     'author': 'Knowledge Engineers',
-    'depends': ['base', 'website', 'sale'],
+    'depends': ['base', 'website', 'sale', 'purchase'],
     'data': [
         'security/kms_security.xml',
         'security/ir.model.access.csv',

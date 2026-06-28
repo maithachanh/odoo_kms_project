@@ -12,9 +12,9 @@ try:
     uid = common.authenticate(DB, USER, PASSWORD, {})
     if uid:
         models = xmlrpc.client.ServerProxy(f'{URL}/xmlrpc/2/object')
-        modules = models.execute_kw(DB, uid, PASSWORD, 'ir.module.module', 'search_read',
-            [[['name', 'in', ['purchase', 'sale']]]],
-            {'fields': ['id', 'name', 'state']})
-        print(modules)
+        fields = models.execute_kw(DB, uid, PASSWORD, 'purchase.order.line', 'fields_get',
+            [['price_unit', 'product_qty', 'product_id']], {'attributes': ['string', 'type']})
+        print("Fields in purchase.order.line:")
+        print(fields)
 except Exception as e:
     print("Error:", e)
