@@ -23,6 +23,10 @@ DB = os.getenv("ODOO_DB", "odoo_kms")
 USER = os.getenv("ODOO_USER", "admin")
 PASSWORD = os.getenv("ODOO_PASSWORD", "admin")
 
+# Self-healing Docker hostname override
+if os.path.exists('/.dockerenv') and HOST in ('localhost', '127.0.0.1'):
+    HOST = 'odoo19-web'
+
 import socket
 # Set default socket timeout of 10 seconds for XML-RPC
 socket.setdefaulttimeout(10)

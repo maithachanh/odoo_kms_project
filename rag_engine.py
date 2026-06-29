@@ -68,8 +68,7 @@ GREETING_RESPONSE = (
 
 # Standard Fallback response (Scenario 1)
 FALLBACK_RESPONSE = (
-    "I could not find sufficient information in the FoodHub knowledge base to answer this question.\n\n"
-    "Please consult your supervisor or the appropriate department for further assistance."
+    "Hệ thống đang cập nhật thêm về thông tin này"
 )
 
 NO_PERMISSION_RESPONSE = (
@@ -440,7 +439,7 @@ def get_rag_response(query_string, user_role, top_k=2, temperature=0.2, provider
             try:
                 from langchain_ollama import ChatOllama
                 llm = ChatOllama(
-                    model="phi3",
+                    model="qwen:0.5b",
                     temperature=temperature,
                     base_url=base_url
                 )
@@ -451,7 +450,7 @@ def get_rag_response(query_string, user_role, top_k=2, temperature=0.2, provider
                 import requests
                 url = f"{base_url}/api/chat"
                 payload = {
-                    "model": "phi3",
+                    "model": "qwen:0.5b",
                     "messages": [
                         {"role": "user", "content": prompt}
                     ],

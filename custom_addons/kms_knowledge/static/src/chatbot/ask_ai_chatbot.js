@@ -27,6 +27,8 @@ export class AskAiChatbot extends Component {
                 "Which project costs us the most?"
             ]
         });
+        
+        this.sendMessage = this.sendMessage.bind(this);
 
         onPatched(() => {
             this.scrollToBottom();

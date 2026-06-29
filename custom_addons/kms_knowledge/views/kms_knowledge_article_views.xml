@@ -339,11 +339,23 @@
             </field>
         </record>
 
+        <!-- Standalone AI Chatbot Client Action (iframe embedded) -->
+        <record id="action_kms_knowledge_chatbot_iframe" model="ir.actions.client">
+            <field name="name">AI Assistant</field>
+            <field name="tag">kms_knowledge.ChatbotIframe</field>
+        </record>
+
         <menuitem id="menu_kms_knowledge_chatbot"
                   name="AI Chatbot"
                   parent="menu_kms_knowledge_root"
                   action="action_kms_knowledge_chatbot_window"
                   sequence="20"/>
+
+        <menuitem id="menu_kms_knowledge_chatbot_standalone"
+                  name="AI Assistant"
+                  parent="menu_kms_knowledge_root"
+                  action="action_kms_knowledge_chatbot_iframe"
+                  sequence="25"/>
 
         <menuitem id="menu_kms_knowledge_purchase"
                   name="Purchase Orders"
@@ -356,5 +368,40 @@
                   parent="menu_kms_knowledge_root"
                   action="sale.product_template_action"
                   sequence="40"/>
+
+        <!-- Inherit Employee Form View to add Contracts & Salary page -->
+        <record id="view_employee_form_inherit_kms" model="ir.ui.view">
+            <field name="name">hr.employee.form.inherit.kms</field>
+            <field name="model">hr.employee</field>
+            <field name="inherit_id" ref="hr.view_employee_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//notebook" position="inside">
+                    <page string="Contracts &amp; Salary" name="contracts_salary">
+                        <group>
+                            <group string="Salary Details">
+                                <field name="currency_id" invisible="1"/>
+                                <field name="wage"/>
+                            </group>
+                            <group string="Contract Duration">
+                                <field name="contract_start"/>
+                                <field name="contract_end"/>
+                            </group>
+                        </group>
+                    </page>
+                </xpath>
+            </field>
+        </record>
+
+        <!-- Inherit Employee Tree View to add Wage column -->
+        <record id="view_employee_tree_inherit_kms" model="ir.ui.view">
+            <field name="name">hr.employee.tree.inherit.kms</field>
+            <field name="model">hr.employee</field>
+            <field name="inherit_id" ref="hr.view_employee_tree"/>
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='work_email']" position="before">
+                    <field name="wage" widget="monetary" optional="show"/>
+                </xpath>
+            </field>
+        </record>
     </data>
 </odoo>

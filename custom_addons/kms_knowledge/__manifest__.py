@@ -12,7 +12,7 @@ and metadata-tagging capabilities.
     """,
     'category': 'Knowledge Management',
     'author': 'Knowledge Engineers',
-    'depends': ['base', 'website', 'sale', 'purchase'],
+    'depends': ['base', 'website', 'sale', 'purchase', 'hr'],
     'data': [
         'security/kms_security.xml',
         'security/ir.model.access.csv',
@@ -27,6 +27,8 @@ and metadata-tagging capabilities.
             'kms_knowledge/static/src/chatbot/ask_ai_chatbot.scss',
             'kms_knowledge/static/src/systray/ask_ai_systray.xml',
             'kms_knowledge/static/src/systray/ask_ai_systray.js',
+            'kms_knowledge/static/src/chatbot/chatbot_iframe.xml',
+            'kms_knowledge/static/src/chatbot/chatbot_iframe.js',
         ],
         'web.assets_frontend': [
             'kms_knowledge/static/src/website/website_chat.js',

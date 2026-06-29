@@ -36,7 +36,7 @@ class KmsChatbotController(http.Controller):
         }
         
         try:
-            response = requests.post(url, json=payload, timeout=30)
+            response = requests.post(url, json=payload, timeout=300)
             if response.status_code == 200:
                 res_data = response.json()
                 return {

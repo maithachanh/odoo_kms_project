@@ -55,6 +55,9 @@ services:
       - ./chroma_db:/app/chroma_db
       - ./huggingface_cache/huggingface:/root/.cache/huggingface
       - .env:/app/.env
+      - ./rag_engine.py:/app/rag_engine.py
+      - ./odoo_agent_utils.py:/app/odoo_agent_utils.py
+      - ./rag_api.py:/app/rag_api.py
     restart: always
 
   ollama:

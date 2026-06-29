@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<templates xml:space="preserve">
+    <t t-name="kms_knowledge.ChatbotIframe">
+        <div class="w-100 h-100" style="overflow: hidden; background-color: #f8f9fa;">
+            <iframe src="http://localhost:8501" style="width: 100%; height: calc(100vh - 46px); border: none;"/>
+        </div>
+    </t>
+</templates>
