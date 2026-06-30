@@ -1,59 +1,94 @@
-# 🧠 TÀI LIỆU KỸ SƯ AI (AI ENGINEER DOCS)
+# 🧠 AI ENGINEER DOCUMENTATION
 
-Tài liệu này trình bày chi tiết về luồng hoạt động (Data Flow) của hệ thống AI khi xử lý Prompt (Câu hỏi) của người dùng từ lúc nhập liệu cho đến lúc trả về kết quả.
-
----
-
-## 1. 🌊 Luồng Xử Lý AI (AI Prompt Flow)
-
-Hệ thống được thiết kế theo kiến trúc **RAG (Retrieval-Augmented Generation)** kết hợp với **Odoo Agent Intents**. Một vòng đời xử lý câu hỏi diễn ra qua 10 giai đoạn sau:
-
-### Giai đoạn 1: Tiếp nhận và Phân quyền (Frontend & Controller)
-- **Bước 1 (User Input)**: Người dùng nhập câu hỏi vào giao diện Chatbot (Odoo Widget hoặc Streamlit).
-- **Bước 2 (Role Assignment)**: Odoo Controller (`main.py`) nhận câu hỏi, tự động kiểm tra chức vụ (Group) của người dùng trên Odoo để gán cờ `user_role` (`hr_manager`, `it_staff`, hoặc `public`).
-- **Bước 3 (API Gateway)**: Odoo Controller đẩy gói tin JSON (chứa câu hỏi + quyền) sang máy chủ RAG API (`rag_api.py`).
-
-### Giai đoạn 2: Phân tích Ý định & Kết nối ERP (Agentic Intents)
-- **Bước 4 (Intent Detection & Live Data)**: RAG API ném câu hỏi vào hàm `detect_intents()`. 
-  - Nếu phát hiện người dùng đang hỏi về Đơn mua hàng (PO) hay Đơn bán hàng (SO), AI Agent sẽ chạy luồng rẽ nhánh: Kết nối thẳng vào Database Odoo qua XML-RPC, dùng lệnh `search_read` để lấy số liệu các đơn hàng "sống", và tính toán tổng cộng/trung bình ngay lập tức.
-  - Số liệu này được lưu trữ thành `odoo_context`.
-
-### Giai đoạn 3: Rào chắn và Tìm kiếm (Retrieval & Guardrails)
-- **Bước 5 (Pre-Guardrail Check)**: Bộ lọc AI kiểm tra xem câu hỏi có chứa từ khóa thao túng (Prompt Injection) hay nhạy cảm không. Nếu có, báo lỗi Fallback ngay lập tức.
-- **Bước 6 (Vector Search)**: 
-  - Biến câu hỏi thành Vector bằng mô hình Embedding (`all-MiniLM-L6-v2`).
-  - Quét trong Vector Database (ChromaDB) để tìm các mẩu tài liệu (chunks) gần nghĩa nhất.
-  - **Khóa bảo mật (RBAC)**: Câu lệnh tìm kiếm bị ép cứng bộ lọc Role (Ví dụ: `{"access_role": "public"}`), khiến Database giấu tiệt mọi tài liệu mật khỏi tầm mắt của nhân viên thường.
-- **Bước 7 (Post-Guardrail Check)**: Đánh giá Điểm khoảng cách (L2 Distance) của tài liệu vừa tìm thấy. Nếu nó quá lạc đề (tức là không có trong hệ thống), AI cũng sẽ bị chặn lại để chống hiện tượng "Ảo giác" (Hallucination).
-
-### Giai đoạn 4: Sinh văn bản (Generation)
-- **Bước 8 (Prompt Construction)**: Hệ thống lắp ráp một Prompt khổng lồ theo công thức: `Prompt = [System Prompt] + [Context từ ChromaDB] + [Context Live Data Odoo] + [Câu hỏi của người dùng]`.
-- **Bước 9 (LLM Inference)**: Prompt này được đẩy vào miệng mô hình siêu tốc độ chạy offline **Qwen:0.5b** (thông qua Ollama). Mô hình sẽ đọc ngữ cảnh và tự đúc kết thành câu trả lời văn bản.
-
-### Giai đoạn 5: Trả Kết Quả
-- **Bước 10 (Delivery)**: Trả về đoạn hội thoại cho Frontend, bao gồm cả nội dung Answer và danh sách Sources (tên tài liệu nguồn).
+This document details the Data Flow of the AI system when processing a User Prompt, from the initial input to the final generated response.
 
 ---
 
-## 2. 📸 Giao diện Chức năng & Kết quả Demo (Project Screenshots & Demo)
+## 1. 🌊 AI Prompt Data Flow Architecture
 
-Dưới đây là các hình ảnh minh chứng (Screenshots) cho thấy hệ thống đang hoạt động trơn tru trong thực tế:
+The system is built on a **Retrieval-Augmented Generation (RAG)** architecture combined with **Odoo Agent Intents**. The lifecycle of a query consists of 10 stages:
 
-### 2.1. Giao diện Streamlit Độc Lập
-Giao diện ứng dụng chat toàn màn hình chạy bên ngoài Odoo, cho phép cấu hình tham số RAG, mô hình LLM và giả lập chức vụ (User Role Simulation).
-![Giao diện Streamlit Cấu hình RAG & LLM](C:/Users/nhan/.gemini/antigravity/brain/4f7d3c0d-90d5-4d5d-9443-ce136c4360e5/media__1782804946141.jpg)
+### System Flowchart (Mermaid)
 
-### 2.2. Giao diện Chatbot Nổi trên Odoo (Kiểm thử Phân Quyền)
-Khung chat nhỏ gọn (Ask AI) nằm ở góc dưới cùng màn hình Odoo.
-- **Trường hợp bị chặn (Guardrail - Access Denied)**: Khi tài khoản không có quyền xem thông tin mật, AI sẽ báo từ chối truy cập.
-  ![Chatbot Odoo Báo Lỗi Phân Quyền](C:/Users/nhan/.gemini/antigravity/brain/4f7d3c0d-90d5-4d5d-9443-ce136c4360e5/media__1782804946298.jpg)
-- **Trường hợp thành công (Authorized Access)**: Khi truy vấn đúng chức năng cho phép, AI sẽ trích xuất tài liệu nội bộ và tổng hợp thành các bước cụ thể.
-  ![Chatbot Odoo Trả Lời Thành Công](C:/Users/nhan/.gemini/antigravity/brain/4f7d3c0d-90d5-4d5d-9443-ce136c4360e5/media__1782804946303.jpg)
+```mermaid
+sequenceDiagram
+    participant User
+    participant Frontend as Odoo/Streamlit UI
+    participant Backend as Odoo Controller (main.py)
+    participant API as RAG API (rag_api.py)
+    participant Agent as Odoo Agent Intents
+    participant Guardrail as Security Guardrails
+    participant DB as ChromaDB (Vector DB)
+    participant LLM as Ollama (Qwen:0.5b)
+    
+    User->>Frontend: Enters Question
+    Frontend->>Backend: HTTP POST Request
+    Backend->>Backend: Determine user_role (RBAC)
+    Backend->>API: Forward Payload (Query + Role)
+    API->>Agent: Check for Calculation Intents (PO/SO)
+    alt Calculation Intent Detected
+        Agent->>Agent: Fetch Live Data via XML-RPC
+        Agent-->>API: Return Odoo Live Context
+    end
+    API->>Guardrail: Pre-Guardrail Check
+    Guardrail-->>API: Reject if Prompt Injection
+    API->>DB: Vector Search (filtered by user_role)
+    DB-->>API: Return Top-K Chunks
+    API->>Guardrail: Post-Guardrail Check (L2 Distance)
+    Guardrail-->>API: Reject if Irrelevant (Hallucination prevention)
+    API->>API: Construct Prompt Template
+    API->>LLM: Generate Answer
+    LLM-->>API: Return Natural Language Response
+    API-->>Backend: Final Answer + Sources
+    Backend-->>Frontend: Display to User
+```
 
-### 2.3. Khả năng Tính toán Dữ liệu ERP "Sống" (Live Data Intents)
-Chatbot không chỉ đọc tài liệu mà còn có khả năng kết nối sâu vào phân hệ Kế toán/Bán hàng (Sales) để tự động tính toán tổng số lượng và doanh số các đơn hàng (SO) trực tiếp từ Database Odoo.
-![Chatbot Tính toán SO](C:/Users/nhan/.gemini/antigravity/brain/4f7d3c0d-90d5-4d5d-9443-ce136c4360e5/media__1782804946114.jpg)
+### Phase 1: Reception & Authorization
+- **Step 1 (User Input)**: The user enters a question into the Chatbot UI (Odoo Widget or Streamlit).
+- **Step 2 (Role Assignment)**: The Odoo Controller (`main.py`) receives the query, automatically checks the user's Odoo Group, and assigns a `user_role` flag (`hr_manager`, `it_staff`, or `public`).
+- **Step 3 (API Gateway)**: The Odoo Controller pushes the JSON payload (containing the query + role) to the RAG API server (`rag_api.py`).
 
-### 2.4. Kiến trúc Container (Docker)
-Hệ thống được đóng gói bài bản và chạy trên các container độc lập: Odoo Web, PostgreSQL DB, Ollama Server, và RAG API Engine.
-![Kiến trúc Docker](C:/Users/nhan/.gemini/antigravity/brain/4f7d3c0d-90d5-4d5d-9443-ce136c4360e5/media__1782804946139.jpg)
+### Phase 2: Intent Analysis & ERP Integration
+- **Step 4 (Intent Detection & Live Data)**: The RAG API passes the query to `detect_intents()`. 
+  - If it detects that the user is asking about Purchase Orders (PO) or Sales Orders (SO), the AI Agent triggers a sub-routine: It connects directly to the Odoo Database via XML-RPC, uses `search_read` to fetch live transactional data, and instantly calculates the totals/averages.
+  - This data is stored as `odoo_context`.
+
+### Phase 3: Retrieval & Guardrails
+- **Step 5 (Pre-Guardrail Check)**: The AI filter checks if the query contains manipulation keywords (Prompt Injection) or sensitive restricted topics. If so, it immediately returns a Fallback error.
+- **Step 6 (Vector Search)**: 
+  - Converts the query into a Vector using the Embedding model (`all-MiniLM-L6-v2`).
+  - Scans the Vector Database (ChromaDB) to find the most semantically relevant document chunks.
+  - **Security Lock (RBAC)**: The search query is strictly bound by a Role filter (e.g., `{"access_role": "public"}`), ensuring the Database completely hides confidential HR/IT documents from regular employees.
+- **Step 7 (Post-Guardrail Check)**: Evaluates the L2 Distance score of the retrieved documents. If the score is too high (i.e., the topic doesn't exist in the system), the AI execution is halted to prevent "Hallucination".
+
+### Phase 4: Text Generation
+- **Step 8 (Prompt Construction)**: The system assembles a massive Prompt using the formula: `Prompt = [System Prompt] + [ChromaDB Context] + [Odoo Live Data Context] + [User Query]`.
+- **Step 9 (LLM Inference)**: This Prompt is injected into the ultra-fast offline model **Qwen:0.5b** (via Ollama). The model reads the context and synthesizes a natural language answer.
+
+### Phase 5: Delivery
+- **Step 10 (Delivery)**: Returns the conversation payload to the Frontend, including both the generated Answer and the Sources (original document names).
+
+---
+
+## 2. 📸 Project Screenshots & Demo Results
+
+Below are the actual evidence screenshots showing the system operating flawlessly in practice:
+
+### 2.1. Standalone Streamlit Interface
+A full-screen chat application running outside Odoo, allowing configuration of RAG parameters, LLM selection, and User Role Simulation.
+![Streamlit RAG & LLM Configuration](images/streamlit_ui.jpg)
+
+### 2.2. Odoo Systray Chatbot (Access Control Testing)
+A compact chat widget (Ask AI) located at the bottom corner of the Odoo screen.
+- **Guardrail - Access Denied**: When an unauthorized account attempts to access confidential information, the AI enforces a strict fallback rejection.
+  ![Odoo Chatbot Access Denied Error](images/chatbot_access_denied.jpg)
+- **Authorized Access**: When querying with the correct permissions, the AI successfully extracts internal documents and synthesizes specific steps.
+  ![Odoo Chatbot Successful Response](images/chatbot_access_success.jpg)
+
+### 2.3. ERP Live Data Calculation Intents
+The Chatbot doesn't just read static documents; it deeply integrates with the Accounting/Sales modules to automatically calculate total quantities and revenue of Sales Orders (SO) directly from the live Odoo Database.
+![Chatbot SO Calculation](images/chatbot_so_calculation.jpg)
+
+### 2.4. Docker Container Architecture
+The system is professionally packaged and runs on independent containers: Odoo Web, PostgreSQL DB, Ollama Server, and the RAG API Engine.
+![Docker Architecture](images/docker_architecture.jpg)
