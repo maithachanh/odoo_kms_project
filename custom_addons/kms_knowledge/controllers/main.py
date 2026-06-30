@@ -16,16 +16,16 @@ class KmsChatbotController(http.Controller):
         """
         user_role = 'public'
         
-        # If user is logged in
-        if request.session.uid:
-            try:
-                user = request.env.user
-                if user.has_group('kms_knowledge.group_kms_hr_manager') or user.has_group('base.group_system'):
-                    user_role = 'hr_manager'
-                elif user.has_group('kms_knowledge.group_kms_it_staff'):
-                    user_role = 'it_staff'
-            except Exception as e:
-                _logger.error("Error determining user role in Ask AI: %s", e)
+        # [TESTING MODE] - Ép toàn bộ query thành quyền public để test
+        # if request.session.uid:
+        #     try:
+        #         user = request.env.user
+        #         if user.has_group('kms_knowledge.group_kms_hr_manager') or user.has_group('base.group_system'):
+        #             user_role = 'hr_manager'
+        #         elif user.has_group('kms_knowledge.group_kms_it_staff'):
+        #             user_role = 'it_staff'
+        #     except Exception as e:
+        #         _logger.error("Error determining user role in Ask AI: %s", e)
         
         rag_url = request.env['ir.config_parameter'].sudo().get_param('kms.rag_api_url', 'http://rag-api:8000')
         url = f"{rag_url}/query"

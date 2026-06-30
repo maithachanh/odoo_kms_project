@@ -253,11 +253,11 @@ def get_rag_response(query_string, user_role, top_k=2, temperature=0.2, provider
     is_odoo_triggered = False
     
     if is_calc:
-        print(f"[ODOO AGENT] Calculation intent detected for query: '{query_string}'")
+        # print("[ODOO AGENT] Calculation intent detected")
         odoo_context = fetch_live_po_so_summary()
         is_odoo_triggered = True
     elif is_search and keywords:
-        print(f"[ODOO AGENT] Search intent detected for keywords {keywords} in query: '{query_string}'")
+        # print("[ODOO AGENT] Search intent detected")
         odoo_context = search_odoo_records(keywords)
         if odoo_context:
             is_odoo_triggered = True
